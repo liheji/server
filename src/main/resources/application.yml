@@ -1,0 +1,45 @@
+server:
+  servlet:
+    session:
+      tracking-modes: cookie
+      cookie:
+        http-only: true
+  port: 8080
+
+spring:
+  jmx:
+    enabled: false
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 16384MB
+      max-request-size: 16384MB
+  datasource: # 配置数据库连接
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/server?characterEncoding=utf-8&useSSL=false
+    username: root
+    password: 58k&Qtc1!CQU#@0O
+  mail:
+    host: smtp.qq.com
+    username: 2820054672@qq.com
+    password: mueanfsescybdege
+    port: 587
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          socketFactoryClass: javax.net.ssl.SSLSocketFactory
+        debug: true
+
+mybatis-plus:
+  type-aliases-package: top.liheji.pojo
+  mapper-locations: classpath:mapper/*Mapper.xml
+  global-config:
+    db-config:
+      id-type: auto
+      table-prefix: server_
+
+logging:
+  level:
+    top.liheji.server: info
+  config: classpath:log4j2.xml
