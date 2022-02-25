@@ -1,0 +1,37 @@
+package top.liheji.server.pojo.other;
+
+import lombok.Data;
+
+/**
+ * @Time : 2022/1/17 21:28
+ * @Author : Galaxy
+ * @Create : IdeaJ
+ * @Project : work
+ * @Description :
+ */
+@Data
+public class FileItem {
+    private String permit;
+    private String user;
+    private String group;
+    private Long size;
+    private Long time;
+    private String name;
+    private String link;
+    private Boolean isFile;
+
+    public FileItem() {
+        this.size = 0L;
+        this.link = "";
+    }
+
+    public FileItem(String permit, String user, String group, Long time, String name) {
+        this();
+        this.permit = permit;
+        this.isFile = permit.startsWith("-");
+        this.user = user;
+        this.group = group;
+        this.time = time;
+        this.name = name;
+    }
+}
