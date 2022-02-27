@@ -1,13 +1,8 @@
 package top.liheji.server.util;
 
-import com.csvreader.CsvWriter;
+import com.aspose.cells.*;
 import lombok.NonNull;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.commons.io.IOUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -30,37 +25,42 @@ public class HrbeuUtils {
     private static final Pattern GRADE_REGEX = Pattern.compile("([\\d]+班)");
     private static final Pattern TEACH_REGEX = Pattern.compile("[(（](.*)[)）]");
     private static final Pattern NUM_RANGE_REGEX = Pattern.compile("(\\d+)(-(\\d+))?");
-    private static final String[] NUM = {"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"};
 
     /**
-     * 将文件处理为Wakeup课程表可识别的本地文件
+     * 将文件处理为Wakeup课程表可识别的 csv本地文件
      *
-     * @param file 源文件
+     * @param name 源文件流
+     * @param name 源文件名
      * @return 新文件
-     * @throws IOException 异常
+     * @throws Exception 异常
      */
     public static @Nullable
-    File dealWakeupSchedule(File file) throws IOException {
-        String name = file.getName();
-        File newFile = FileUtils.resourceFile("files", StringUtils.genUuidWithoutLine() + ".csv");
-
-        if (!newFile.getParentFile().exists()) {
-            newFile.getParentFile().mkdirs();
+    File dealWakeupSchedule(InputStream in, String name) throws Exception {
+        if (name == null) {
+            return null;
         }
-
-        CsvWriter csvWriter = new CsvWriter(new FileOutputStream(newFile), ',', StandardCharsets.UTF_8);
+        License li = new License();
+        li.setLicense();
+        Workbook wk = new Workbook();
+        Cells cells = wk.getWorksheets().get(0).getCells();
 
         List<Course> sourceCourses;
         if (name.endsWith(".html")) {
-            sourceCourses = genCourseListByHtml(file);
+            sourceCourses = genCourseListByHtml(in);
         } else if (name.endsWith(".xls") || name.endsWith(".xlsx")) {
-            sourceCourses = genCourseListByXls(file);
+            sourceCourses = genCourseListByXls(in);
         } else {
             return null;
         }
 
+        String[] writeData = new String[]{"课程名称", "星期", "开始节数", "结束节数", "老师", "地点", "周数"};
+        for (int j = 0; j < writeData.length; j++) {
+            cells.get(0, j).putValue(writeData[j]);
+        }
+
+        int i = 1;
         for (Course course : sourceCourses) {
-            csvWriter.writeRecord(new String[]{
+            writeData = new String[]{
                     course.getName(),
                     course.getDay().toString(),
                     course.getStartNode().toString(),
@@ -68,100 +68,47 @@ public class HrbeuUtils {
                     course.getTeacher(),
                     course.getRoom(),
                     String.format("%d-%d", course.getStartWeek(), course.getEndWeek())
-            });
-        }
-        csvWriter.close();
-
-        return newFile;
-    }
-
-
-    /**
-     * 将文件处理为TimeTable课程表可识别的本地文件
-     *
-     * @param file 源文件
-     * @return 新文件
-     * @throws IOException 异常
-     */
-    public static @Nullable
-    File dealTimeTable(File file) throws IOException {
-        String name = file.getName();
-        File newFile = FileUtils.resourceFile("files", StringUtils.genUuidWithoutLine() + ".xls");
-
-        if (!newFile.getParentFile().exists()) {
-            newFile.getParentFile().mkdirs();
-        }
-
-        Workbook simpleWb = new HSSFWorkbook();
-        Sheet simpleSheet = simpleWb.createSheet("Sheet0");
-
-        List<Course> sourceCourses;
-        if (name.endsWith(".html")) {
-            sourceCourses = genCourseListByHtml(file);
-        } else if (name.endsWith(".xls") || name.endsWith(".xlsx")) {
-            sourceCourses = genCourseListByXls(file);
-        } else {
-            return null;
-        }
-        int i = 0;
-        for (Course course : sourceCourses) {
-            Row newRow = simpleSheet.createRow(i);
-            String[] writeData = new String[]{
-                    course.getName(),
-                    course.getTeacher(),
-                    NUM[course.getDay()],
-                    String.format("%d-%d", course.getStartNode(), course.getEndNode()),
-                    course.getRoom(),
-                    String.format("%d-%d", course.getStartWeek(), course.getEndWeek())
             };
 
             for (int j = 0; j < writeData.length; j++) {
-                newRow.createCell(j).setCellValue(writeData[j]);
+                cells.get(i, j).putValue(writeData[j]);
             }
 
             i++;
         }
 
-        FileOutputStream out = new FileOutputStream(newFile);
-        simpleWb.write(out);
-
-        out.close();
-        simpleWb.close();
+        File newFile = FileUtils.genNoRepeatFile(".csv", "files");
+        wk.save(newFile.getAbsolutePath(), com.aspose.cells.SaveFormat.CSV);
 
         return newFile;
     }
 
-
     /**
      * 处理源文件为xls和xlsx的文件
      *
-     * @param file 源文件
+     * @param fis 源文件流
      * @return 处理好的课程列表
-     * @throws IOException 异常
+     * @throws Exception 异常
      */
-    private static @NonNull List<Course> genCourseListByXls(File file) throws IOException {
+    private static @NonNull List<Course> genCourseListByXls(InputStream fis) throws Exception {
         List<Course> courseList = new ArrayList<>();
 
-        FileInputStream fis = new FileInputStream(file);
-        Workbook wb;
-        //根据文件后缀（xls/xlsx）进行判断
-        if (file.getName().toLowerCase().endsWith(".xls")) {
-            wb = new HSSFWorkbook(fis);
-        } else {
-            wb = new XSSFWorkbook(fis);
-        }
+        try {
+            License li = new License();
+            li.setLicense();
+            Workbook wk = new Workbook(fis);
+            Cells cells = wk.getWorksheets().get(0).getCells();
 
-        Sheet sheet = wb.getSheetAt(0);
-        //遍历行
-        for (int i = sheet.getFirstRowNum() + 2; i <= sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            if (row != null) {
-                //遍历列
+            if (cells == null) {
+                return courseList;
+            }
+
+            for (int i = cells.getMinDataRow() + 2; i < cells.getMaxDataRow(); i++) {
                 int countDay = 1;
-                for (int j = row.getFirstCellNum() + 1; j < row.getLastCellNum(); j++) {
-                    Cell cell = row.getCell(j);
-                    if (cell != null) {
-                        String courseSource = cell.toString().trim();
+                for (int j = cells.getMinDataColumn() + 1; j < cells.getMaxDataColumn(); j++) {
+                    Object obj = cells.get(i, j).getValue();
+                    if (obj != null) {
+                        String courseSource = ((String) obj).trim();
                         if (courseSource.length() <= 5) {
                             countDay++;
                             continue;
@@ -179,6 +126,8 @@ public class HrbeuUtils {
                     countDay++;
                 }
             }
+        } finally {
+            IOUtils.closeQuietly(fis);
         }
 
         return courseList;
@@ -187,47 +136,57 @@ public class HrbeuUtils {
     /**
      * 处理源文件为html的文件
      *
-     * @param file 源文件
+     * @param fis 源文件流
      * @return 处理好的课程列表
-     * @throws IOException 异常
+     * @throws Exception 异常
      */
-    private static @NonNull List<Course> genCourseListByHtml(File file) throws IOException {
-        //读取 html文件
-        StringBuilder builder = new StringBuilder();
-        FileInputStream fis = new FileInputStream(file);
-        InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-        BufferedReader br = new BufferedReader(isr);
-        String line;
-        while ((line = br.readLine()) != null) {
-            builder.append(line);
-        }
-
+    private static @NonNull List<Course> genCourseListByHtml(InputStream fis) throws Exception {
         //格式化
         List<Course> courseList = new ArrayList<>();
-        Document doc = org.jsoup.Jsoup.parse(builder.toString());
-        Element table1 = doc.getElementById("StuCul_TimetableQry_TimeTable").getElementsByClass("WtbodyZlistS").get(0);
-        Elements trs = table1.getElementsByTag("tr");
-        for (Element tr : trs) {
-            Elements tds = tr.getElementsByTag("td");
-            int countDay = 1;
-            for (int i = 1; i < tds.size(); i++) {
-                String courseSource = tds.get(i).html().replaceAll("(^<br>)|(<br>$)", "");
-                if (courseSource.length() <= 5) {
-                    countDay++;
-                    continue;
-                }
 
-                for (String course : courseSource.split("<br>\\s*<br>")) {
-                    String[] split = course.split("<br>");
-                    if (split.length < 5) {
+        //读取 html文件
+        InputStreamReader isr = null;
+        BufferedReader br = null;
+
+        try {
+            isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+            br = new BufferedReader(isr);
+
+            String line;
+            StringBuilder builder = new StringBuilder();
+            while ((line = br.readLine()) != null) {
+                builder.append(line);
+            }
+
+            Document doc = org.jsoup.Jsoup.parse(builder.toString());
+            Element table1 = doc.getElementById("StuCul_TimetableQry_TimeTable").getElementsByClass("WtbodyZlistS").get(0);
+            Elements trs = table1.getElementsByTag("tr");
+            for (Element tr : trs) {
+                Elements tds = tr.getElementsByTag("td");
+                int countDay = 1;
+                for (int i = 1; i < tds.size(); i++) {
+                    String courseSource = tds.get(i).html().replaceAll("(^<br>)|(<br>$)", "");
+                    if (courseSource.length() <= 5) {
+                        countDay++;
                         continue;
                     }
 
-                    courseList.addAll(parseCourseInfo(Arrays.asList(split), countDay));
-                }
+                    for (String course : courseSource.split("<br>\\s*<br>")) {
+                        String[] split = course.split("<br>");
+                        if (split.length < 5) {
+                            continue;
+                        }
 
-                countDay++;
+                        courseList.addAll(parseCourseInfo(Arrays.asList(split), countDay));
+                    }
+
+                    countDay++;
+                }
             }
+        } finally {
+            IOUtils.closeQuietly(br);
+            IOUtils.closeQuietly(isr);
+            IOUtils.closeQuietly(fis);
         }
 
         return courseList;

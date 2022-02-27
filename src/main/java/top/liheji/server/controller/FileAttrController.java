@@ -8,7 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.FileAttr;
 import top.liheji.server.service.FileAttrService;
-import top.liheji.server.task.DeleteFileTask;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import top.liheji.server.util.AsposeUtil;
 import top.liheji.server.util.FileUtils;
@@ -80,8 +79,7 @@ public class FileAttrController {
 
     @PostMapping
     public Map<String, Object> insertFileAttr(@RequestParam("file") MultipartFile[] file,
-                                              @RequestAttribute("account") Account current,
-                                              @RequestParam(required = false, defaultValue = "0") Integer expire) throws Exception {
+                                              @RequestAttribute("account") Account current) throws Exception {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "上传成功");
@@ -100,21 +98,27 @@ public class FileAttrController {
                             .eq("file_hash", fileAttr.getFileHash())
             );
             if (infoNew.size() > 0) {
+                boolean flag = false;
                 for (FileAttr cur : infoNew) {
                     if (!current.getId().equals(cur.getAccountId())) {
                         fileAttrService.save(fileAttr);
+                    } else {
+                        map.put("msg", "某些文件已存在");
+                        fileInfoList.add(cur);
                     }
+                    flag |= FileUtils.resourceFile(cur.getFileName()).exists();
                 }
-                map.put("msg", "某些文件已存在");
-                fileInfoList.addAll(infoNew);
-                FileUtils.resourceFile(fileAttr.getFileName()).deleteOnExit();
+
+                if (flag) {
+                    FileUtils.resourceFile(fileAttr.getFileName()).delete();
+                } else {
+                    FileUtils.resourceFile(fileAttr.getFileName()).renameTo(
+                            FileUtils.resourceFile(infoNew.get(0).getFileName())
+                    );
+                }
             } else {
                 len++;
-                if (expire == 1) {
-                    new Timer().schedule(new DeleteFileTask(fileAttr.getFileName()), 10 * 60 * 1000);
-                } else {
-                    fileAttrService.save(fileAttr);
-                }
+                fileAttrService.save(fileAttr);
                 fileInfoList.add(fileAttr);
             }
         }
