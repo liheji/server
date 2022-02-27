@@ -18,7 +18,7 @@ import top.liheji.server.config.remember.CustomPersistentTokenRepository;
 import top.liheji.server.config.remember.impl.CustomJdbcTokenRepositoryImpl;
 import top.liheji.server.config.remember.impl.CustomTokenRememberMeServices;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.util.CypherUtils;
+import top.liheji.server.util.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -36,7 +36,7 @@ import java.util.Map;
 @Configuration
 //@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
-    private final String rememberKey = CypherUtils.genUuidWithLine();
+    private final String rememberKey = StringUtils.genUuid();
 
     @Autowired
     private DataSource dataSource;

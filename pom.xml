@@ -151,7 +151,13 @@
             <artifactId>jsch</artifactId>
             <version>0.1.55</version>
         </dependency>
-        <!-- 文件转化（ word,excel,ppt ） -->
+        <!-- 本地opencv -->
+        <dependency>
+            <groupId>org.opencv</groupId>
+            <artifactId>opencv</artifactId>
+            <version>3.4.13</version>
+        </dependency>
+        <!-- 本地 文件转化(word,excel,ppt) -->
         <dependency>
             <groupId>com.aspose</groupId>
             <artifactId>aspose-words</artifactId>

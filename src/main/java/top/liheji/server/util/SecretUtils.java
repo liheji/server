@@ -36,7 +36,7 @@ public class SecretUtils {
         long timeMillis = type ? 3 * 24 * 60 * 60 * 1000 : 10 * 60 * 1000;
 
         //设置秘钥
-        String key = CypherUtils.genUuid();
+        String key = StringUtils.genUuidWithoutLine();
         log.info(String.format("%s 用户创建了授权码: %s", account.getUsername(), key));
         SECRET_CACHE.put(key,
                 new Object[]{
