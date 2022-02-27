@@ -42,7 +42,7 @@ public class HrbeuUtils {
     public static @Nullable
     File dealWakeupSchedule(File file) throws IOException {
         String name = file.getName();
-        File newFile = FileUtils.resourceFile("files", CypherUtils.genUuid() + ".csv");
+        File newFile = FileUtils.resourceFile("files", StringUtils.genUuidWithoutLine() + ".csv");
 
         if (!newFile.getParentFile().exists()) {
             newFile.getParentFile().mkdirs();
@@ -86,7 +86,7 @@ public class HrbeuUtils {
     public static @Nullable
     File dealTimeTable(File file) throws IOException {
         String name = file.getName();
-        File newFile = FileUtils.resourceFile("files", CypherUtils.genUuid() + ".xls");
+        File newFile = FileUtils.resourceFile("files", StringUtils.genUuidWithoutLine() + ".xls");
 
         if (!newFile.getParentFile().exists()) {
             newFile.getParentFile().mkdirs();

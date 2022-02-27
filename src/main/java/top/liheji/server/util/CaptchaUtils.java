@@ -137,11 +137,11 @@ public class CaptchaUtils {
         }
 
         //设置验证码图片
-        String cid = CypherUtils.genUuid();
+        String cid = StringUtils.genUuidWithoutLine();
         CAPTCHA_CACHE.put(cid,
                 new Object[]{
                         String.join("", code).toLowerCase(),
-                        imageToBase64(image),
+                        encodeImageToBase64(image),
                         System.currentTimeMillis() + 10 * 60 * 1000
                 });
 
@@ -155,10 +155,10 @@ public class CaptchaUtils {
      * @return BASE64编码数据
      * @throws IOException 异常
      */
-    private static String imageToBase64(BufferedImage image) throws IOException {
+    private static String encodeImageToBase64(BufferedImage image) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ImageIO.write(image, "jpg", stream);
-        return String.format("data:image/%s;base64,%s", "jpg", CypherUtils.getBase64Str(stream.toByteArray()));
+        return String.format("data:image/%s;base64,%s", "jpg", CypherUtils.encodeToBase64(stream.toByteArray()));
     }
 
     /**

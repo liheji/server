@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.PassToken;
 import top.liheji.server.service.PassTokenService;
-import top.liheji.server.util.CypherUtils;
+import top.liheji.server.util.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -51,7 +51,7 @@ public class PassTokenController {
 
     @PostMapping
     public Map<String, Object> insertPassToken(PassToken passToken, @RequestAttribute("account") Account current) {
-        passToken.setTokenKey(CypherUtils.genUuid());
+        passToken.setTokenKey(StringUtils.genUuidWithoutLine());
         passToken.setAccountId(current.getId());
 
         Map<String, Object> map = new HashMap<>(2);

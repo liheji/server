@@ -99,33 +99,6 @@ public class FileUtils {
     }
 
     /**
-     * 获取Resource目录下的文件或文件夹
-     * 不创建不存在的文件或文件夹
-     *
-     * @param args 文件子路径
-     * @return 文件
-     */
-    public static File resourceFile(String... args) {
-        File resFile;
-        try {
-            resFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX);
-        } catch (Exception e) {
-            URL url = Thread.currentThread().getContextClassLoader().getResource("");
-            if (url != null) {
-                resFile = new File(url.getPath());
-            } else {
-                resFile = null;
-            }
-        }
-
-        if (args.length > 0) {
-            resFile = new File(resFile, String.join(File.separator, args));
-        }
-
-        return resFile;
-    }
-
-    /**
      * 文件写入
      *
      * @param out 输出流
@@ -169,6 +142,66 @@ public class FileUtils {
             IOUtils.closeQuietly(raf);
             IOUtils.closeQuietly(out);
         }
+    }
+
+    /**
+     * 文件写入
+     *
+     * @param bs64 base64编码文件
+     * @throws IOException IOException
+     */
+    public static File base64FileSave(String bs64) throws IOException {
+        if (bs64.startsWith("data:")) {
+            bs64 = bs64.replaceFirst("^data:.+?;base64,", "");
+        }
+
+        File writeFile = resourceFile("files", StringUtils.genUuidWithoutLine() + ".png");
+        while (writeFile.exists()) {
+            writeFile = resourceFile("files", StringUtils.genUuidWithoutLine() + ".png");
+        }
+
+        InputStream in = new ByteArrayInputStream(CypherUtils.decodeToBytes(bs64));
+        OutputStream out = new FileOutputStream(writeFile);
+
+        try {
+            int len = 0;
+            byte[] buffer = new byte[1024];
+            while ((len = in.read(buffer)) > 0) {
+                out.write(buffer, 0, len);
+            }
+        } finally {
+            IOUtils.closeQuietly(in);
+            IOUtils.closeQuietly(out);
+        }
+
+        return writeFile;
+    }
+
+    /**
+     * 获取Resource目录下的文件或文件夹
+     * 不创建不存在的文件或文件夹
+     *
+     * @param args 文件子路径
+     * @return 文件
+     */
+    public static File resourceFile(String... args) {
+        File resFile;
+        try {
+            resFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX);
+        } catch (Exception e) {
+            URL url = Thread.currentThread().getContextClassLoader().getResource("");
+            if (url != null) {
+                resFile = new File(url.getPath());
+            } else {
+                resFile = null;
+            }
+        }
+
+        if (args.length > 0) {
+            resFile = new File(resFile, String.join(File.separator, args));
+        }
+
+        return resFile;
     }
 
     /**

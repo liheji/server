@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.UUID;
 
 /**
  * @Time : 2021/10/29 22:29
@@ -14,6 +13,14 @@ import java.util.UUID;
  * @Description : 加密工具
  */
 public class CypherUtils {
+    private static final String[] BYTE_CHARS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
+
+    private static final String[] UUID_CHARS = {"a", "b", "c", "d", "e", "f",
+            "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
+            "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5",
+            "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I",
+            "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
+            "W", "X", "Y", "Z"};
 
     /**
      * 利用java原生的摘要实现SHA256加密
@@ -21,8 +28,8 @@ public class CypherUtils {
      * @param str 需要加密后报文
      * @return 加密字符串
      */
-    public static String getSha256Str(String str) {
-        return getSha256Str(str.getBytes(StandardCharsets.UTF_8));
+    public static String encodeToSha256(String str) {
+        return encodeToSha256(str.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -31,8 +38,8 @@ public class CypherUtils {
      * @param str 需要加密后的报文
      * @return 加密字符串
      */
-    public static String getMd5Str(String str) {
-        return getMd5Str(str.getBytes(StandardCharsets.UTF_8));
+    public static String encodeToMd5(String str) {
+        return encodeToMd5(str.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -41,8 +48,18 @@ public class CypherUtils {
      * @param str 需要加密的报文
      * @return 加密字符串
      */
-    public static String getBase64Str(String str) {
-        return getBase64Str(str.getBytes(StandardCharsets.UTF_8));
+    public static String encodeToBase64(String str) {
+        return encodeToBase64(str.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * 实现Base64解密字符串
+     *
+     * @param str 需要加密的报文
+     * @return 字节流
+     */
+    public static byte[] decodeToBytes(String str) {
+        return decodeToBytes(str.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -51,7 +68,7 @@ public class CypherUtils {
      * @param bytes 需要加密后报文
      * @return 加密字符串
      */
-    public static String getSha256Str(byte[] bytes) {
+    public static String encodeToSha256(byte[] bytes) {
         MessageDigest messageDigest;
         String encodeStr = "";
         try {
@@ -70,7 +87,7 @@ public class CypherUtils {
      * @param bytes 需要加密后的报文字流
      * @return 加密字符串
      */
-    public static String getMd5Str(byte[] bytes) {
+    public static String encodeToMd5(byte[] bytes) {
         MessageDigest messageDigest;
         String encodeStr = "";
         try {
@@ -89,8 +106,18 @@ public class CypherUtils {
      * @param bytes 需要加密的报文文字流
      * @return 加密字符串
      */
-    public static String getBase64Str(byte[] bytes) {
+    public static String encodeToBase64(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    /**
+     * 实现Base64解密字符串
+     *
+     * @param bytes 需要解密的报文文字流
+     * @return 字节流
+     */
+    public static byte[] decodeToBytes(byte[] bytes) {
+        return Base64.getDecoder().decode(bytes);
     }
 
     /**
@@ -100,30 +127,11 @@ public class CypherUtils {
      * @return 转化的字符串
      */
     public static String bytesToString(byte[] bytes) {
-        char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
-            sb.append(chars[(b >> 4) & 15]);
-            sb.append(chars[b & 15]);
+            sb.append(BYTE_CHARS[(b >> 4) & 15]);
+            sb.append(BYTE_CHARS[b & 15]);
         }
         return sb.toString();
-    }
-
-    /**
-     * 获取一个去掉横线的UUID字符串
-     *
-     * @return UUID字符串
-     */
-    public static String genUuid() {
-        return genUuidWithLine().replaceAll("-", "");
-    }
-
-    /**
-     * 获取一个原始UUID字符串
-     *
-     * @return UUID字符串
-     */
-    public static String genUuidWithLine() {
-        return UUID.randomUUID().toString();
     }
 }

@@ -19,6 +19,7 @@ import top.liheji.server.util.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -37,17 +38,6 @@ public class AfterController {
 
     @Autowired
     private JavaMailSender javaMailSender;
-
-    public static final String[] IP_STR = {
-            "X-Forwarded-For",
-            "Proxy-Client-IP",
-            "WL-Proxy-Client-IP",
-            "HTTP_CLIENT_IP",
-            "HTTP_X_FORWARDED_FOR",
-            "Proxy-Client-IP",
-            "Proxy-Client-IP",
-            "X-Real-IP"
-    };
 
     /**
      * 代理请求
@@ -93,27 +83,28 @@ public class AfterController {
      */
     @GetMapping("ip")
     public Map<String, Object> ip(@RequestParam(required = false) String query, HttpServletRequest req) {
-        String getStr = "";
-        String ip = req.getHeader(IP_STR[0]);
-        for (int i = 1; i < IP_STR.length; i++) {
-            if (ip == null || "".equals(ip) || "unknown".equalsIgnoreCase(ip)) {
-                ip = req.getHeader(IP_STR[i]);
-            } else {
-                getStr = IP_STR[i - 1];
+        Map<String, Object> map = WebUtils.getIp(req);
+        map.putAll(WebUtils.getIpInfo((String) map.get("ip"), query));
+        return map;
+    }
+
+    @PostMapping("discern")
+    public Map<String, Object> discern(String frontImg, String bgImg, String discernType) throws IOException {
+        File frontIn = FileUtils.base64FileSave(frontImg);
+        File bgIn = FileUtils.base64FileSave(bgImg);
+        Map<String, Object> map = new HashMap<>();
+        SlideUtils side = new SlideUtils();
+        switch (discernType) {
+            case "slide":
+                map.put("data", side.discernSlideImg(frontIn.getPath(), bgIn.getPath()));
                 break;
-            }
+            case "gap":
+                map.put("data", side.discernGapImg(frontIn.getPath(), bgIn.getPath()));
+                break;
+            default:
+                map.put("msg", "不支持的类型");
+                break;
         }
-
-        if (ip == null || "".equals(ip) || "unknown".equalsIgnoreCase(ip)) {
-            ip = req.getRemoteAddr();
-            getStr = "Remote-Addr";
-        } else if (ip.contains(",")) {
-            ip = ip.split(",")[0];
-        }
-
-        Map<String, Object> map = WebUtils.getIpInfo(ip, query);
-        map.put("ip", ip);
-        map.put("from", getStr);
 
         return map;
     }
@@ -124,7 +115,7 @@ public class AfterController {
 
         map.put("code", 0);
         map.put("msg", "OK");
-        map.put("data", CypherUtils.getBase64Str(JSONObject.toJSONBytes(current)));
+        map.put("data", CypherUtils.encodeToBase64(JSONObject.toJSONBytes(current)));
 
         return map;
     }

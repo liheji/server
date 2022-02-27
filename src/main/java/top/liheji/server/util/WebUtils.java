@@ -1,7 +1,6 @@
 package top.liheji.server.util;
 
 import com.alibaba.fastjson.JSONObject;
-import com.mysql.jdbc.StringUtils;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.OperatingSystem;
@@ -28,6 +27,49 @@ import java.util.Map;
  * @Description :
  */
 public class WebUtils {
+    public static final String[] IP_STR = {
+            "X-Forwarded-For",
+            "Proxy-Client-IP",
+            "WL-Proxy-Client-IP",
+            "HTTP_CLIENT_IP",
+            "HTTP_X_FORWARDED_FOR",
+            "Proxy-Client-IP",
+            "Proxy-Client-IP",
+            "X-Real-IP"
+    };
+
+    /**
+     * 获取请求IP地址
+     *
+     * @param req 请求
+     * @return 返回信息
+     */
+    public static Map<String, Object> getIp(HttpServletRequest req) {
+        String getStr = "";
+        String ip = req.getHeader(IP_STR[0]);
+        for (int i = 1; i < IP_STR.length; i++) {
+            if (ip == null || "".equals(ip) || "unknown".equalsIgnoreCase(ip)) {
+                ip = req.getHeader(IP_STR[i]);
+            } else {
+                getStr = IP_STR[i - 1];
+                break;
+            }
+        }
+
+        if (ip == null || "".equals(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = req.getRemoteAddr();
+            getStr = "Remote-Addr";
+        } else if (ip.contains(",")) {
+            ip = ip.split(",")[0];
+        }
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("ip", ip);
+        map.put("from", getStr);
+
+        return map;
+    }
+
 
     /**
      * 获取请求IP地址
@@ -137,12 +179,12 @@ public class WebUtils {
             OperatingSystem operatingSystem = agent.getOperatingSystem();
 
             final String b = String.format("%s %s %s",
-                    toWord(browser.getManufacturer().toString()),
+                    StringUtils.toWord(browser.getManufacturer().toString()),
                     browser.getName().replaceAll("\\d+|\\(.*?\\)", "").trim(),
                     agent.getBrowserVersion().getVersion());
 
             final String os = String.format("%s %s",
-                    toWord(operatingSystem.getManufacturer().toString()),
+                    StringUtils.toWord(operatingSystem.getManufacturer().toString()),
                     operatingSystem.getName());
 
             String dt;
@@ -159,24 +201,14 @@ public class WebUtils {
                     break;
             }
 
-            if (StringUtils.isNullOrEmpty(b) ||
-                    StringUtils.isNullOrEmpty(os) ||
-                    StringUtils.isNullOrEmpty(dt)) {
+            if (StringUtils.isEmpty(b) ||
+                    StringUtils.isEmpty(os) ||
+                    StringUtils.isEmpty(dt)) {
                 return null;
             }
             return new PersistentDevices(dt, b, os);
         } catch (Exception err) {
             return null;
         }
-    }
-
-    /**
-     * 将英文转化为单词样式（eg: good => Good）
-     *
-     * @param str 转换前的字符
-     * @return 转化完成的字符
-     */
-    public static String toWord(String str) {
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
 }
