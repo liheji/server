@@ -56,8 +56,6 @@ public class FileUtils {
         String fileName = file.getOriginalFilename();
         if (fileName == null) {
             fileName = "";
-        } else {
-            fileName = fileName.replaceAll("\\s+", "-");
         }
 
         File f = new File(dirFile, fileName);
@@ -85,7 +83,7 @@ public class FileUtils {
 
         int num;
         byte[] bytes = new byte[1024];
-        while ((num = in.read(bytes)) > 0) {
+        while ((num = in.read(bytes)) != -1) {
             out.write(bytes, 0, num);
             messageDigest.update(bytes, 0, num);
         }
@@ -150,15 +148,12 @@ public class FileUtils {
      * @param bs64 base64编码文件
      * @throws IOException IOException
      */
-    public static File base64FileSave(String bs64) throws IOException {
+    public static File base64SaveToFile(String bs64) throws IOException {
         if (bs64.startsWith("data:")) {
             bs64 = bs64.replaceFirst("^data:.+?;base64,", "");
         }
 
-        File writeFile = resourceFile("files", StringUtils.genUuidWithoutLine() + ".png");
-        while (writeFile.exists()) {
-            writeFile = resourceFile("files", StringUtils.genUuidWithoutLine() + ".png");
-        }
+        File writeFile = genNoRepeatFile(".png", "files");
 
         InputStream in = new ByteArrayInputStream(CypherUtils.decodeToBytes(bs64));
         OutputStream out = new FileOutputStream(writeFile);
@@ -166,7 +161,7 @@ public class FileUtils {
         try {
             int len = 0;
             byte[] buffer = new byte[1024];
-            while ((len = in.read(buffer)) > 0) {
+            while ((len = in.read(buffer)) != -1) {
                 out.write(buffer, 0, len);
             }
         } finally {
@@ -175,6 +170,27 @@ public class FileUtils {
         }
 
         return writeFile;
+    }
+
+    /**
+     * 生成一个在文件夹中不存在的文件名并返回文件类
+     *
+     * @param suffix 文件后缀名
+     * @param args   文件夹
+     * @return 文件
+     */
+    public static File genNoRepeatFile(String suffix, String... args) {
+        File baseDir = resourceFile(args);
+        if (!baseDir.exists()) {
+            baseDir.mkdirs();
+        }
+
+        File file = new File(baseDir, StringUtils.genUuidWithoutLine() + suffix);
+        while (file.exists()) {
+            file = new File(baseDir, StringUtils.genUuidWithoutLine() + suffix);
+        }
+
+        return file;
     }
 
     /**

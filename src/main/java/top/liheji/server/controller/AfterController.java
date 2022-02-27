@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.pojo.FileAttr;
 import top.liheji.server.service.FileAttrService;
 import top.liheji.server.task.CloseDriverTask;
 import top.liheji.server.task.DeleteFileTask;
@@ -32,7 +31,6 @@ import java.util.*;
  */
 @RestController
 public class AfterController {
-
     @Autowired
     FileAttrService fileAttrService;
 
@@ -90,9 +88,11 @@ public class AfterController {
 
     @PostMapping("discern")
     public Map<String, Object> discern(String frontImg, String bgImg, String discernType) throws IOException {
-        File frontIn = FileUtils.base64FileSave(frontImg);
-        File bgIn = FileUtils.base64FileSave(bgImg);
-        Map<String, Object> map = new HashMap<>();
+        File frontIn = FileUtils.base64SaveToFile(frontImg);
+        File bgIn = FileUtils.base64SaveToFile(bgImg);
+        Map<String, Object> map = new HashMap<>(2);
+        map.put("code", 0);
+        map.put("msg", "识别成功");
         SlideUtils side = new SlideUtils();
         switch (discernType) {
             case "slide":
@@ -102,9 +102,13 @@ public class AfterController {
                 map.put("data", side.discernGapImg(frontIn.getPath(), bgIn.getPath()));
                 break;
             default:
+                map.put("code", 1);
                 map.put("msg", "不支持的类型");
                 break;
         }
+
+        frontIn.deleteOnExit();
+        bgIn.deleteOnExit();
 
         return map;
     }
@@ -146,44 +150,20 @@ public class AfterController {
 
     @PostMapping("format")
     @ResponseBody
-    public Map<String, Object> uploadAndFormatFile(@RequestParam("file") MultipartFile file,
-                                                   @RequestParam(required = false, defaultValue = "") String software) throws Exception {
+    public Map<String, Object> uploadAndFormatFile(@RequestParam("file") MultipartFile file) throws Exception {
         Map<String, Object> map = new HashMap<>(4);
-        // 文件存放服务端的位置
-        FileAttr attr = FileUtils.uploadFile(file);
-        File f = FileUtils.resourceFile("files", attr.getFileName());
         //处理excel文件
         map.put("code", 1);
         map.put("msg", "参数或格式错误(注意使用UTF-8编码)");
 
-        File genFile = null;
-        switch (software.trim()) {
-            case "com.suda.yzune.wakeupschedule":
-                genFile = HrbeuUtils.dealWakeupSchedule(f);
-                if (genFile == null) {
-                    map.put("msg", "仅支持xls,xlsx,html格式");
-                } else {
-                    map.put("code", 0);
-                    map.put("msg", "格式化完成");
-                    map.put("fileName", genFile.getName());
-                }
-                break;
-            case "com.strivexj.timetable":
-                genFile = HrbeuUtils.dealTimeTable(f);
-                if (genFile == null) {
-                    map.put("msg", "仅支持xls,xlsx,html格式");
-                } else {
-                    map.put("code", 0);
-                    map.put("msg", "格式化完成");
-                    map.put("fileName", genFile.getName());
-                }
-                break;
-            default:
-                break;
+        File genFile = HrbeuUtils.dealWakeupSchedule(file.getInputStream(), file.getOriginalFilename());
+        if (genFile == null) {
+            map.put("msg", "仅支持xls,xlsx,html格式");
+        } else {
+            map.put("code", 0);
+            map.put("msg", "格式化完成");
+            map.put("fileName", genFile.getName());
         }
-
-        //删除源文件
-        f.deleteOnExit();
 
         //定时删除生成的文件
         if (genFile != null) {

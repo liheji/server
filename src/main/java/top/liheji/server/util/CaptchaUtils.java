@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * @Time : 2021/12/31 16:09
@@ -21,9 +20,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class CaptchaUtils {
-    private static final Pattern MATCHER = Pattern.compile("\\d+");
-    private static final String[] CHARS = "0,1,2,3,4,5,6,7,9,8,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z".split(",");
-
+    private static final String[] CAPTCHA_CHARS = "0,1,2,3,4,5,6,7,9,8,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z".split(",");
     private static final Map<String, Object[]> CAPTCHA_CACHE = new ConcurrentHashMap<>();
 
     private final Random random = new Random();
@@ -78,11 +75,9 @@ public class CaptchaUtils {
      * @return 验证码ID
      */
     public String genImage(int width, int height) throws Exception {
-        for (int i = 0; i < 3 && !MATCHER.matcher(code.toString()).find(); i++) {
-            code.clear();
-            for (int j = 0; j < 4; ++j) {
-                code.add(CHARS[random.nextInt(CHARS.length)]);
-            }
+        code.clear();
+        for (int j = 0; j < 4; ++j) {
+            code.add(CAPTCHA_CHARS[random.nextInt(CAPTCHA_CHARS.length)]);
         }
 
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
