@@ -1,14 +1,15 @@
 package top.liheji.server.config.filter;
 
 import com.alibaba.fastjson.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import top.liheji.server.config.exception.CaptchaException;
-import top.liheji.server.util.CaptchaUtils;
+import top.liheji.server.service.CaptchaService;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -28,8 +29,10 @@ import java.util.Map;
  */
 @Component
 public class CaptchaVerifyFilter extends OncePerRequestFilter {
+    @Autowired
+    private CaptchaService captchaService;
+
     private String captchaParameter = "captcha";
-    private String captchaIdParameter = "cid";
 
     private String[] matchers;
 
@@ -46,14 +49,6 @@ public class CaptchaVerifyFilter extends OncePerRequestFilter {
 
     public void setCaptchaParameter(String captchaParameter) {
         this.captchaParameter = captchaParameter;
-    }
-
-    public String getCaptchaIdParameter() {
-        return captchaIdParameter;
-    }
-
-    public void setCaptchaIdParameter(String captchaIdParameter) {
-        this.captchaIdParameter = captchaIdParameter;
     }
 
     @Override
@@ -84,18 +79,13 @@ public class CaptchaVerifyFilter extends OncePerRequestFilter {
 
         if (requiresCaptcha(request) || otherRequireCaptcha(request)) {
             String captcha = obtainCaptcha(request);
-            String captchaId = obtainCaptchaId(request);
 
             if (captcha == null) {
-                throw new CaptchaException("验证码不能为空");
+                throw new DisabledException("验证码不能为空");
             }
 
-            if (captchaId == null) {
-                throw new CaptchaException("验证码ID不能为空");
-            }
-
-            if (!CaptchaUtils.check(captchaId, captcha)) {
-                throw new CaptchaException("验证码错误");
+            if (!captchaService.checkCaptcha(captcha)) {
+                throw new DisabledException("验证码错误");
             }
         }
     }
@@ -107,11 +97,6 @@ public class CaptchaVerifyFilter extends OncePerRequestFilter {
     @Nullable
     protected String obtainCaptcha(HttpServletRequest request) {
         return request.getParameter(this.captchaParameter);
-    }
-
-    @Nullable
-    protected String obtainCaptchaId(HttpServletRequest request) {
-        return request.getParameter(this.captchaIdParameter);
     }
 
     public void setMatchers(String... matchers) {

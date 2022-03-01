@@ -96,18 +96,6 @@ public class ParamSetFilter extends OncePerRequestFilter {
         }
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
-//        if (request.getRequestURI().startsWith("/status")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-//
-//        response.setContentType("application/json;charset=utf-8");
-//        PrintWriter out = response.getWriter();
-//        Map<String, Object> objectMap = new HashMap<>(2);
-//        objectMap.put("code", 1);
-//        objectMap.put("msg", "非法请求");
-//        out.write(JSONObject.toJSONString(objectMap));
     }
 
     private String[] decodeCookie(String cookieValue) throws InvalidCookieException {

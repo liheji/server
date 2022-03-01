@@ -1,24 +1,24 @@
 package top.liheji.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import lombok.Cleanup;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
 import top.liheji.server.pojo.Account;
+import top.liheji.server.service.CaptchaService;
 import top.liheji.server.service.FileAttrService;
-import top.liheji.server.task.CloseDriverTask;
-import top.liheji.server.task.DeleteFileTask;
 import top.liheji.server.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 
@@ -35,7 +35,7 @@ public class AfterController {
     FileAttrService fileAttrService;
 
     @Autowired
-    private JavaMailSender javaMailSender;
+    private CaptchaService captchaService;
 
     /**
      * 代理请求
@@ -54,8 +54,9 @@ public class AfterController {
         final String path = req.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE).toString();
         final String bestMatchingPattern = req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE).toString();
         String url = "http://" + new AntPathMatcher().extractPathWithinPattern(bestMatchingPattern, path);
+        @Cleanup("timeClose") DriverUtils driverUtils = DriverUtils.getInstance();
 
-        WebDriver driver = DriverUtils.getInstance().getWebDriver();
+        WebDriver driver = driverUtils.getWebDriver();
         if ("post".equalsIgnoreCase(rM)) {
             URL obj = new URL(url);
             driver.get("http://" + obj.getHost());
@@ -64,8 +65,6 @@ public class AfterController {
             url = String.format("%s?%s", url, WebUtils.paramToGetStr(req));
             driver.get(url);
         }
-
-        new Timer().schedule(new CloseDriverTask(), 10 * 60 * 1000);
 
         resp.setCharacterEncoding("utf-8");
         resp.setContentType("text/html");
@@ -131,19 +130,22 @@ public class AfterController {
 
         map.put("code", 0);
         map.put("msg", "生成成功");
-        map.put("key", SecretUtils.genSecret(current, type));
+        map.put("key", captchaService.genSecret(current, 5 * 60));
 
         return map;
     }
 
     @GetMapping("emailCaptcha")
     public Map<String, Object> bindCaptcha(String receiver, @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(2);
+        Map<String, Object> map = new HashMap<>(4);
+        map.put("code", 1);
+        map.put("msg", "用户不存在");
 
-        String code = SecretUtils.genCaptcha(current, 6);
-        EmailUtils.sendCaptcha(javaMailSender, receiver, code);
-        map.put("code", 0);
-        map.put("msg", "发送成功");
+        if (current != null) {
+            captchaService.sendEmailCaptcha(receiver);
+            map.put("code", 0);
+            map.put("msg", "发送成功");
+        }
 
         return map;
     }
@@ -156,18 +158,15 @@ public class AfterController {
         map.put("code", 1);
         map.put("msg", "参数或格式错误(注意使用UTF-8编码)");
 
-        File genFile = HrbeuUtils.dealWakeupSchedule(file.getInputStream(), file.getOriginalFilename());
+        @Cleanup InputStream in = file.getInputStream();
+
+        File genFile = HrbeuUtils.dealWakeupSchedule(in, file.getOriginalFilename());
         if (genFile == null) {
             map.put("msg", "仅支持xls,xlsx,html格式");
         } else {
             map.put("code", 0);
             map.put("msg", "格式化完成");
             map.put("fileName", genFile.getName());
-        }
-
-        //定时删除生成的文件
-        if (genFile != null) {
-            new Timer().schedule(new DeleteFileTask(genFile.getName()), 10 * 60 * 1000);
         }
 
         return map;

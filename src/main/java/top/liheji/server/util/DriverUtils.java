@@ -1,5 +1,8 @@
 package top.liheji.server.util;
 
+import lombok.Cleanup;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
@@ -7,6 +10,8 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,6 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @Project : server
  * @Description : 浏览器驱动工具
  */
+@Slf4j
 public class DriverUtils {
     private static DriverUtils driver;
     private static boolean isPermit = false;
@@ -135,6 +141,13 @@ public class DriverUtils {
     }
 
     /**
+     * 关闭浏览器连接
+     */
+    public void timeClose() {
+        new Timer().schedule(new CloseTask(), 20 * 60 * 1000);
+    }
+
+    /**
      * 执行命令
      *
      * @param cmd 命令
@@ -144,8 +157,8 @@ public class DriverUtils {
         String[] cmdArr = {"/bin/sh", "-c", cmd};
         Runtime run = Runtime.getRuntime();
         try {
-            Process process = (cmd != null && cmd.contains("|")) ? run.exec(cmdArr) : run.exec(cmd);
-            InputStream in = process.getInputStream();
+            @Cleanup("destroy") Process process = (cmd != null && cmd.contains("|")) ? run.exec(cmdArr) : run.exec(cmd);
+            @Cleanup InputStream in = process.getInputStream();
             StringBuilder builder = new StringBuilder();
 
             int len = 0;
@@ -154,12 +167,28 @@ public class DriverUtils {
                 builder.append(new String(bytes, 0, len));
             }
 
-            in.close();
-            process.destroy();
             return builder.toString();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("远程代码执行错误：" + e);
         }
         return null;
+    }
+
+
+    private static class CloseTask extends TimerTask {
+        private static long CLOSE_TIME = 0;
+
+        public CloseTask() {
+            CLOSE_TIME = System.currentTimeMillis() + 20 * 60 * 1000;
+        }
+
+        @SneakyThrows
+        @Override
+        public void run() {
+            if (CLOSE_TIME > 0 && CLOSE_TIME <= System.currentTimeMillis()) {
+                driver.close();
+                CLOSE_TIME = 0;
+            }
+        }
     }
 }

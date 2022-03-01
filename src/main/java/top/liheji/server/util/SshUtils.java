@@ -1,6 +1,7 @@
 package top.liheji.server.util;
 
 import com.jcraft.jsch.*;
+import lombok.Cleanup;
 import top.liheji.server.pojo.other.FileItem;
 
 import java.io.ByteArrayInputStream;
@@ -52,7 +53,7 @@ public class SshUtils {
         ChannelExec channel = (ChannelExec) this.session.openChannel("exec");
         channel.setPty(false);
         channel.setCommand(cmd);
-        InputStream in = channel.getInputStream();
+        @Cleanup InputStream in = channel.getInputStream();
         channel.connect(30000);
 
         int i;
@@ -85,7 +86,7 @@ public class SshUtils {
     }
 
     public boolean upload(String path, File file) throws Exception {
-        InputStream in = new FileInputStream(file);
+        @Cleanup InputStream in = new FileInputStream(file);
         return upload(path, in, file.getName());
     }
 

@@ -1,5 +1,6 @@
 package top.liheji.server.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -15,6 +16,7 @@ import top.liheji.server.config.intercept.WebSocketInterceptor;
  * @Project : server
  * @Description :
  */
+@Slf4j
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
@@ -30,5 +32,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(websocketHandler, "/websocket/{tid}")
                 .addInterceptors(webSocketInterceptor)
                 .setAllowedOrigins("*");
+
+        log.info("WebSocket拦截器注册成功");
     }
 }

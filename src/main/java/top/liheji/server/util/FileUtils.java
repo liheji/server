@@ -1,9 +1,9 @@
 package top.liheji.server.util;
 
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jmimemagic.Magic;
 import net.sf.jmimemagic.MagicMatch;
-import org.apache.commons.io.IOUtils;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 import top.liheji.server.pojo.FileAttr;
@@ -77,8 +77,8 @@ public class FileUtils {
         info.setFileSize(file.getSize());
 
         //为读取文件提供流通道
-        InputStream in = file.getInputStream();
-        OutputStream out = new FileOutputStream(f);
+        @Cleanup InputStream in = file.getInputStream();
+        @Cleanup OutputStream out = new FileOutputStream(f);
         MessageDigest messageDigest = MessageDigest.getInstance("MD5");
 
         int num;
@@ -89,9 +89,6 @@ public class FileUtils {
         }
 
         info.setFileHash(CypherUtils.bytesToString(messageDigest.digest()));
-
-        in.close();
-        out.close();
 
         return info;
     }
@@ -110,35 +107,20 @@ public class FileUtils {
 
         long total = 0L;
         byte[] buffer = new byte[10240];
-        try {
-            while (true) {
-                int res = raf.read(buffer);
-                if (res <= 0) {
-                    if (out != null) {
-                        out.close();
-                        out = null;
-                    }
+        while (true) {
+            int res = raf.read(buffer);
+            if (res <= 0) {
+                break;
+            }
 
-                    raf.close();
-                    break;
-                }
-
-                total += res;
-                if (out != null) {
-                    if (total < len) {
-                        out.write(buffer, 0, res);
-                    } else {
-                        out.write(buffer, 0, (int) (len - total + res));
-
-                        out.close();
-                        out = null;
-                        raf.close();
-                    }
+            total += res;
+            if (out != null) {
+                if (total < len) {
+                    out.write(buffer, 0, res);
+                } else {
+                    out.write(buffer, 0, (int) (len - total + res));
                 }
             }
-        } finally {
-            IOUtils.closeQuietly(raf);
-            IOUtils.closeQuietly(out);
         }
     }
 
@@ -155,18 +137,13 @@ public class FileUtils {
 
         File writeFile = genNoRepeatFile(".png", "files");
 
-        InputStream in = new ByteArrayInputStream(CypherUtils.decodeToBytes(bs64));
-        OutputStream out = new FileOutputStream(writeFile);
+        @Cleanup InputStream in = new ByteArrayInputStream(CypherUtils.decodeToBytes(bs64));
+        @Cleanup OutputStream out = new FileOutputStream(writeFile);
 
-        try {
-            int len = 0;
-            byte[] buffer = new byte[1024];
-            while ((len = in.read(buffer)) != -1) {
-                out.write(buffer, 0, len);
-            }
-        } finally {
-            IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(out);
+        int len = 0;
+        byte[] buffer = new byte[1024];
+        while ((len = in.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
         }
 
         return writeFile;
