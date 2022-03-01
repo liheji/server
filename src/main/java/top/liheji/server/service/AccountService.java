@@ -9,5 +9,4 @@ import top.liheji.server.pojo.Account;
 * @createDate 2022-01-25 15:03:20
 */
 public interface AccountService extends IService<Account> {
-
 }

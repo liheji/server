@@ -2,13 +2,10 @@ package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.service.AccountService;
-import top.liheji.server.util.CaptchaUtils;
-import top.liheji.server.util.EmailUtils;
-import top.liheji.server.util.SecretUtils;
+import top.liheji.server.service.CaptchaService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,10 +21,10 @@ import java.util.Map;
 @RequestMapping("/before")
 public class BeforeController {
     @Autowired
-    private JavaMailSender javaMailSender;
+    private AccountService accountService;
 
     @Autowired
-    private AccountService accountService;
+    private CaptchaService captchaService;
 
     @PostMapping("forget")
     public Map<String, Object> forget(String email, String key, String password) {
@@ -37,7 +34,7 @@ public class BeforeController {
 
         Account account = accountService.getOne(new QueryWrapper<Account>().eq("email", email));
         if (account != null) {
-            if (SecretUtils.check(key)) {
+            if (captchaService.checkCaptcha(key)) {
                 account.setPassword(password);
                 account.bcryptPassword();
                 if (accountService.saveOrUpdate(account)) {
@@ -58,7 +55,7 @@ public class BeforeController {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 1);
         map.put("msg", "授权码错误");
-        if (SecretUtils.check(licence)) {
+        if (captchaService.checkSecret(null, licence)) {
             account.bcryptPassword();
             if (accountService.save(account)) {
                 map.put("code", 0);
@@ -75,13 +72,11 @@ public class BeforeController {
     @GetMapping("imageCaptcha")
     public Map<String, Object> imgCaptcha(@RequestParam(required = false, defaultValue = "100") Integer width,
                                           @RequestParam(required = false, defaultValue = "38") Integer height) throws Exception {
-        CaptchaUtils captcha = new CaptchaUtils();
-        String cid = captcha.genImage(width, height);
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "获取成功");
-        map.put("cid", cid);
-        map.put("data", CaptchaUtils.getImageBase64(cid));
+        map.put("data", captchaService.genImgCaptcha(4, width, height));
+
         return map;
     }
 
@@ -93,8 +88,7 @@ public class BeforeController {
 
         Account account = accountService.getOne(new QueryWrapper<Account>().eq("email", receiver));
         if (account != null) {
-            String code = SecretUtils.genCaptcha(account, 6);
-            EmailUtils.sendCaptcha(javaMailSender, receiver, code);
+            captchaService.sendEmailCaptcha(receiver);
             map.put("code", 0);
             map.put("msg", "发送成功");
         }

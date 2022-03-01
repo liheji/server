@@ -1,11 +1,13 @@
 package top.liheji.server.config;
 
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -33,8 +35,9 @@ import java.util.Map;
  * @Project : mybatis-gen
  * @Description :
  */
+@Slf4j
 @Configuration
-//@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final String rememberKey = StringUtils.genUuid();
 
@@ -104,6 +107,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                     if (resp.getStatus() == HttpServletResponse.SC_NOT_ACCEPTABLE) {
                         objectMap.put("code", 1);
                         objectMap.put("msg", "无法识别登录设备，不允许登录");
+                        log.warn("无法识别的设备尝试登录");
                     } else {
                         objectMap.put("code", 0);
                         objectMap.put("msg", "登录成功");
@@ -150,6 +154,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                         resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     }
                 });
+
+        log.info("SpringSecurity配置加载完成");
     }
 
     /**

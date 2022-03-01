@@ -4,8 +4,8 @@ package top.liheji.server.util;
 import com.aspose.cells.Workbook;
 import com.aspose.slides.Presentation;
 import com.aspose.words.Document;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.util.regex.Pattern;
@@ -20,14 +20,12 @@ import java.util.regex.Pattern;
 @Slf4j
 public class AsposeUtil {
     public static boolean transToPdf(String sourcePath, String pdfPath) {
-        OutputStream out = null;
         try {
-            out = new FileOutputStream(pdfPath);
+            @Cleanup OutputStream out = new FileOutputStream(pdfPath);
             return transToPdf(sourcePath, out);
         } catch (Exception e) {
+            log.error("文件转换错误：" + e);
             return false;
-        } finally {
-            IOUtils.closeQuietly(out);
         }
     }
 
@@ -49,55 +47,43 @@ public class AsposeUtil {
     }
 
     private static boolean wordToPdf(File file, OutputStream pdfStream) {
-        InputStream in = null;
         Document doc;
         try {
             new com.aspose.words.License().setLicense();
-            in = new FileInputStream(file);
+            @Cleanup InputStream in = new FileInputStream(file);
             doc = new Document(in);
             doc.save(pdfStream, com.aspose.words.SaveFormat.PDF);
         } catch (Exception e) {
-            log.error(e.toString());
+            log.error("Word文件转换失败：" + e);
             return false;
-        } finally {
-            IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(pdfStream);
         }
 
         return true;
     }
 
     private static boolean excelToPdf(File file, OutputStream pdfStream) {
-        InputStream in = null;
         try {
             new com.aspose.cells.License().setLicense();
-            in = new FileInputStream(file);
+            @Cleanup InputStream in = new FileInputStream(file);
             Workbook wb = new Workbook(in);
             wb.save(pdfStream, com.aspose.cells.SaveFormat.PDF);
         } catch (Exception e) {
-            log.error(e.toString());
+            log.error("Excel文件转换失败：" + e);
             return false;
-        } finally {
-            IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(pdfStream);
         }
 
         return true;
     }
 
     private static boolean pptToPdf(File file, OutputStream pdfStream) {
-        InputStream in = null;
         try {
             new com.aspose.slides.License().setLicense();
-            in = new FileInputStream(file);
+            @Cleanup InputStream in = new FileInputStream(file);
             Presentation pres = new Presentation(in);
             pres.save(pdfStream, com.aspose.slides.SaveFormat.Pdf);
         } catch (Exception e) {
-            log.error(e.toString());
+            log.error("Ppt文件转换失败：" + e);
             return false;
-        } finally {
-            IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(pdfStream);
         }
 
         return true;

@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.service.AccountService;
-import top.liheji.server.util.SecretUtils;
+import top.liheji.server.service.CaptchaService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +22,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/account")
 public class AccountController {
+    @Autowired
+    private CaptchaService captchaService;
 
     @Autowired
     private AccountService accountService;
@@ -48,7 +50,8 @@ public class AccountController {
             execute = false;
         }
 
-        if (account.getEmail() != null && !SecretUtils.check(key)) {
+
+        if (account.getEmail() != null && !captchaService.checkCaptcha(key)) {
             map.put("msg", "校验码错误");
             execute = false;
         }

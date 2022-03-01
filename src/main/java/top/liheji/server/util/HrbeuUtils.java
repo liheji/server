@@ -1,8 +1,8 @@
 package top.liheji.server.util;
 
 import com.aspose.cells.*;
+import lombok.Cleanup;
 import lombok.NonNull;
-import org.apache.commons.io.IOUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -11,9 +11,7 @@ import top.liheji.server.pojo.other.Course;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,6 +78,9 @@ public class HrbeuUtils {
         File newFile = FileUtils.genNoRepeatFile(".csv", "files");
         wk.save(newFile.getAbsolutePath(), com.aspose.cells.SaveFormat.CSV);
 
+        //定时删除生成的文件课表文件
+        new Timer().schedule(new DeleteTask(newFile), 10 * 60 * 1000);
+
         return newFile;
     }
 
@@ -93,41 +94,37 @@ public class HrbeuUtils {
     private static @NonNull List<Course> genCourseListByXls(InputStream fis) throws Exception {
         List<Course> courseList = new ArrayList<>();
 
-        try {
-            License li = new License();
-            li.setLicense();
-            Workbook wk = new Workbook(fis);
-            Cells cells = wk.getWorksheets().get(0).getCells();
+        License li = new License();
+        li.setLicense();
+        Workbook wk = new Workbook(fis);
+        Cells cells = wk.getWorksheets().get(0).getCells();
 
-            if (cells == null) {
-                return courseList;
-            }
+        if (cells == null) {
+            return courseList;
+        }
 
-            for (int i = cells.getMinDataRow() + 2; i < cells.getMaxDataRow(); i++) {
-                int countDay = 1;
-                for (int j = cells.getMinDataColumn() + 1; j < cells.getMaxDataColumn(); j++) {
-                    Object obj = cells.get(i, j).getValue();
-                    if (obj != null) {
-                        String courseSource = ((String) obj).trim();
-                        if (courseSource.length() <= 5) {
-                            countDay++;
+        for (int i = cells.getMinDataRow() + 2; i < cells.getMaxDataRow(); i++) {
+            int countDay = 1;
+            for (int j = cells.getMinDataColumn() + 1; j < cells.getMaxDataColumn(); j++) {
+                Object obj = cells.get(i, j).getValue();
+                if (obj != null) {
+                    String courseSource = ((String) obj).trim();
+                    if (courseSource.length() <= 5) {
+                        countDay++;
+                        continue;
+                    }
+
+                    for (String course : courseSource.split("\n\\s*\n")) {
+                        String[] split = course.split("\n");
+                        if (split.length < 5) {
                             continue;
                         }
 
-                        for (String course : courseSource.split("\n\\s*\n")) {
-                            String[] split = course.split("\n");
-                            if (split.length < 5) {
-                                continue;
-                            }
-
-                            courseList.addAll(parseCourseInfo(Arrays.asList(split), countDay));
-                        }
+                        courseList.addAll(parseCourseInfo(Arrays.asList(split), countDay));
                     }
-                    countDay++;
                 }
+                countDay++;
             }
-        } finally {
-            IOUtils.closeQuietly(fis);
         }
 
         return courseList;
@@ -145,48 +142,39 @@ public class HrbeuUtils {
         List<Course> courseList = new ArrayList<>();
 
         //读取 html文件
-        InputStreamReader isr = null;
-        BufferedReader br = null;
+        @Cleanup InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+        @Cleanup BufferedReader br = new BufferedReader(isr);
 
-        try {
-            isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-            br = new BufferedReader(isr);
+        String line;
+        StringBuilder builder = new StringBuilder();
+        while ((line = br.readLine()) != null) {
+            builder.append(line);
+        }
 
-            String line;
-            StringBuilder builder = new StringBuilder();
-            while ((line = br.readLine()) != null) {
-                builder.append(line);
-            }
+        Document doc = org.jsoup.Jsoup.parse(builder.toString());
+        Element table1 = doc.getElementById("StuCul_TimetableQry_TimeTable").getElementsByClass("WtbodyZlistS").get(0);
+        Elements trs = table1.getElementsByTag("tr");
+        for (Element tr : trs) {
+            Elements tds = tr.getElementsByTag("td");
+            int countDay = 1;
+            for (int i = 1; i < tds.size(); i++) {
+                String courseSource = tds.get(i).html().replaceAll("(^<br>)|(<br>$)", "");
+                if (courseSource.length() <= 5) {
+                    countDay++;
+                    continue;
+                }
 
-            Document doc = org.jsoup.Jsoup.parse(builder.toString());
-            Element table1 = doc.getElementById("StuCul_TimetableQry_TimeTable").getElementsByClass("WtbodyZlistS").get(0);
-            Elements trs = table1.getElementsByTag("tr");
-            for (Element tr : trs) {
-                Elements tds = tr.getElementsByTag("td");
-                int countDay = 1;
-                for (int i = 1; i < tds.size(); i++) {
-                    String courseSource = tds.get(i).html().replaceAll("(^<br>)|(<br>$)", "");
-                    if (courseSource.length() <= 5) {
-                        countDay++;
+                for (String course : courseSource.split("<br>\\s*<br>")) {
+                    String[] split = course.split("<br>");
+                    if (split.length < 5) {
                         continue;
                     }
 
-                    for (String course : courseSource.split("<br>\\s*<br>")) {
-                        String[] split = course.split("<br>");
-                        if (split.length < 5) {
-                            continue;
-                        }
-
-                        courseList.addAll(parseCourseInfo(Arrays.asList(split), countDay));
-                    }
-
-                    countDay++;
+                    courseList.addAll(parseCourseInfo(Arrays.asList(split), countDay));
                 }
+
+                countDay++;
             }
-        } finally {
-            IOUtils.closeQuietly(br);
-            IOUtils.closeQuietly(isr);
-            IOUtils.closeQuietly(fis);
         }
 
         return courseList;
@@ -266,5 +254,26 @@ public class HrbeuUtils {
             }
         }
         return resCourseList;
+    }
+
+    private static class DeleteTask extends TimerTask {
+        private final File[] files;
+
+        public DeleteTask(File... files) {
+            this.files = files;
+        }
+
+        @Override
+        public void run() {
+            for (File file : files) {
+                for (int i = 0; file.exists() && !file.delete() && i < 4; i++) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 }

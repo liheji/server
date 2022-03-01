@@ -2,6 +2,7 @@ package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.Cleanup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,7 +13,6 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import top.liheji.server.util.AsposeUtil;
 import top.liheji.server.util.FileUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
@@ -134,25 +134,21 @@ public class FileAttrController {
     public void downloadFile(@RequestParam(defaultValue = "") String param,
                              @RequestHeader(value = "Range", defaultValue = "") String rang,
                              @RequestAttribute("account") Account current,
-                             HttpServletRequest req, HttpServletResponse resp) throws IOException {
+                             HttpServletResponse resp) throws IOException {
 
-        Wrapper<FileAttr> wrapper;
         if (param.matches("^\\d+$")) {
-            wrapper = new QueryWrapper<FileAttr>()
+            Wrapper<FileAttr> wrapper = new QueryWrapper<FileAttr>()
                     .eq("id", Integer.parseInt(param))
                     .eq("account_id", current.getId());
-        } else {
-            wrapper = new QueryWrapper<FileAttr>()
-                    .eq("file_name", param)
-                    .eq("account_id", current.getId());
-        }
 
-        List<FileAttr> fileAttrList = fileAttrService.list(wrapper);
-        if (fileAttrList.size() <= 0) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
+            List<FileAttr> fileAttrList = fileAttrService.list(wrapper);
+            if (fileAttrList.size() <= 0) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+
+            param = fileAttrList.get(0).getFileName();
         }
-        param = fileAttrList.get(0).getFileName();
 
         //get方式提交的
         File file = FileUtils.resourceFile("files", param);
@@ -200,10 +196,10 @@ public class FileAttrController {
         }
 
         //获取输出流
-        OutputStream out = resp.getOutputStream();
+        @Cleanup OutputStream out = resp.getOutputStream();
 
         //构建任意读取输入流
-        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        @Cleanup RandomAccessFile raf = new RandomAccessFile(file, "r");
 
         FileUtils.writePos(out, raf, startPos, contentLength);
     }
@@ -214,27 +210,22 @@ public class FileAttrController {
                             HttpServletResponse resp) throws Exception {
         param = param == null ? "" : param;
 
-        Wrapper<FileAttr> wrapper;
         if (param.matches("^\\d+$")) {
-            wrapper = new QueryWrapper<FileAttr>()
+            Wrapper<FileAttr> wrapper = new QueryWrapper<FileAttr>()
                     .eq("id", Integer.parseInt(param))
                     .eq("account_id", current.getId());
-        } else {
-            wrapper = new QueryWrapper<FileAttr>()
-                    .eq("file_name", param)
-                    .eq("account_id", current.getId());
-        }
 
-        List<FileAttr> fileAttrList = fileAttrService.list(wrapper);
-        if (fileAttrList.size() <= 0) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
+            List<FileAttr> fileAttrList = fileAttrService.list(wrapper);
+            if (fileAttrList.size() <= 0) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
 
-        String filename = fileAttrList.get(0).getFileName();
+            param = fileAttrList.get(0).getFileName();
+        }
 
         //get方式提交的
-        File file = FileUtils.resourceFile("files", filename);
+        File file = FileUtils.resourceFile("files", param);
         if (!file.exists()) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -264,13 +255,13 @@ public class FileAttrController {
         OutputStream out = resp.getOutputStream();
         if (Pattern.matches(".*\\.(doc|xls|ppt)x?$", file.getName())) {
             resp.setHeader("Content-Type", "application/pdf");
-            resp.setHeader("Content-Disposition", "filename=" + URLEncoder.encode(filename + ".pdf", "UTF-8"));
+            resp.setHeader("Content-Disposition", "filename=" + URLEncoder.encode(param + ".pdf", "UTF-8"));
             AsposeUtil.transToPdf(file.getAbsolutePath(), out);
             in.close();
         } else {
             resp.setHeader("Content-Type", contentType);
             resp.setHeader("Content-Length", String.valueOf(file.length()));
-            resp.setHeader("Content-Disposition", "filename=" + URLEncoder.encode(filename, "UTF-8"));
+            resp.setHeader("Content-Disposition", "filename=" + URLEncoder.encode(param, "UTF-8"));
 
             int len = 0;
             byte[] bytes = new byte[1024];
