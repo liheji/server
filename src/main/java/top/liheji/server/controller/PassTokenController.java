@@ -31,7 +31,7 @@ public class PassTokenController {
     @GetMapping
     public Map<String, Object> queryPassToken(Integer page, Integer limit,
                                               @RequestAttribute("account") Account current,
-                                              @RequestParam(required = false) String tokenNote) {
+                                              @RequestParam(required = false, defaultValue = "") String tokenNote) {
         Page<PassToken> tokenPage = passTokenService.page(
                 new Page<>(page, limit),
                 new QueryWrapper<PassToken>()

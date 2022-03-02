@@ -1,13 +1,11 @@
 package top.liheji.server.service.impl;
 
-import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.service.CaptchaService;
 import top.liheji.server.util.CypherUtils;
@@ -19,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Time : 2022/3/1 10:56
@@ -34,7 +33,7 @@ public class CaptchaServiceImpl implements CaptchaService {
     private JavaMailSender javaMailSender;
 
     @Autowired
-    private JedisPool jedisPool;
+    private RedisTemplate<String, Object> redisTemplate;
 
     private static final Random RANDOM = new Random();
     private static final String CAPTCHA_CHARS = "0123456798qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
@@ -48,8 +47,7 @@ public class CaptchaServiceImpl implements CaptchaService {
 
         //存储到 redis(大小写不敏感)
         String code = builder.toString().toLowerCase();
-        @Cleanup Jedis jedis = jedisPool.getResource();
-        jedis.setex("captcha:" + code, 10 * 60L, "");
+        redisTemplate.opsForValue().setIfAbsent("captcha:" + code, "", 10 * 60L, TimeUnit.SECONDS);
 
         return code;
     }
@@ -70,12 +68,12 @@ public class CaptchaServiceImpl implements CaptchaService {
 
         String key = "captcha:" + code.toLowerCase();
 
-        @Cleanup Jedis jedis = jedisPool.getResource();
-        boolean exit = jedis.exists(key);
-        if (exit) {
-            jedis.del(key);
+        Object obj = redisTemplate.opsForValue().get(key);
+        if (obj != null) {
+            redisTemplate.delete(key);
         }
-        return exit;
+
+        return obj != null;
     }
 
     @Override
@@ -84,8 +82,7 @@ public class CaptchaServiceImpl implements CaptchaService {
         String key = StringUtils.genUuidWithoutLine().toLowerCase();
 
         //存储到 redis
-        @Cleanup Jedis jedis = jedisPool.getResource();
-        jedis.setex("secret:" + key, expire, account.getUsername());
+        redisTemplate.opsForValue().setIfAbsent("secret:" + key, account.getUsername(), expire, TimeUnit.SECONDS);
 
         return key;
     }
@@ -97,10 +94,10 @@ public class CaptchaServiceImpl implements CaptchaService {
         }
 
         String key = "secret:" + code.toLowerCase();
-        @Cleanup Jedis jedis = jedisPool.getResource();
-        if (jedis.exists(key)) {
-            String uname = jedis.get(key);
-            jedis.del(key);
+        Object obj = redisTemplate.opsForValue().get(key);
+        if (obj != null) {
+            String uname = (String) obj;
+            redisTemplate.delete(key);
             if (account != null) {
                 return account.getUsername().equals(uname);
             }

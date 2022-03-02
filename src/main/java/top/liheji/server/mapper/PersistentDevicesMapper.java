@@ -1,7 +1,9 @@
 package top.liheji.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
+import top.liheji.server.config.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.PersistentDevices;
 
 /**
@@ -11,6 +13,7 @@ import top.liheji.server.pojo.PersistentDevices;
 * @Entity top.liheji.pojo.PersistentDevices
 */
 @Mapper
+@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
 public interface PersistentDevicesMapper extends BaseMapper<PersistentDevices> {
 
 }

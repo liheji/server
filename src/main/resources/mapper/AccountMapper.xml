@@ -3,18 +3,24 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="top.liheji.server.mapper.AccountMapper">
+    <!-- mapper 使用缓存的方式是使用”<cache-ref>“标签引用dao的命名空间，因为dao中已经开启缓存，-->
+    <!-- 这样与dao中的缓存保持一直，如果mapper文件不引用缓存，-->
+    <!-- 执行update方法时，不会清除dao的缓存，导致数据库数据与缓存数据不一致。-->
+    <!-- 如果直接使用”<cache>“标签开启缓存，会与dao中的冲突，服务启动失败。-->
+
+    <cache-ref namespace="top.liheji.server.mapper.AccountMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.Account">
-            <id property="id" column="id" jdbcType="INTEGER"/>
-            <result property="username" column="username" jdbcType="VARCHAR"/>
-            <result property="password" column="password" jdbcType="VARCHAR"/>
-            <result property="mobile" column="mobile" jdbcType="VARCHAR"/>
-            <result property="email" column="email" jdbcType="VARCHAR"/>
-            <result property="isEnabled" column="is_enabled" jdbcType="BIT"/>
-            <result property="lastLogin" column="last_login" jdbcType="TIMESTAMP"/>
-            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-            <result property="version" column="version" jdbcType="INTEGER"/>
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="mobile" column="mobile" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+        <result property="isEnabled" column="is_enabled" jdbcType="BIT"/>
+        <result property="lastLogin" column="last_login" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="version" column="version" jdbcType="INTEGER"/>
     </resultMap>
 
     <sql id="Base_Column_List">

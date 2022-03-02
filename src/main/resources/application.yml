@@ -19,6 +19,7 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/server?characterEncoding=utf-8&useSSL=false
     username: root
     password: 58k&Qtc1!CQU#@0O
+    type: com.alibaba.druid.pool.DruidDataSource
   mail:
     host: smtp.qq.com
     username: 2820054672@qq.com
@@ -29,7 +30,15 @@ spring:
       mail:
         smtp:
           socketFactoryClass: javax.net.ssl.SSLSocketFactory
-        debug: true
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    timeout: 300
+    connectTimeout: 600
+    jedis:
+      pool:
+        max-active: 50
 
 mybatis-plus:
   type-aliases-package: top.liheji.pojo
@@ -38,17 +47,8 @@ mybatis-plus:
     db-config:
       id-type: auto
       table-prefix: server_
-jedis:
-  database: 1
-  host: 127.0.0.1
-  port: 6379
-  timeout: 2000
-  pool:
-    max-active: 100
-    min-idle: 0
-    max-idle: 80
-    test-on-borrow: true
-    max-wait-millis: 30000
+  configuration:
+    cache-enabled: true
 
 logging:
   level:

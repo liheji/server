@@ -45,8 +45,7 @@ public class PersistentDevices implements Serializable {
     private Boolean isCurrent;
 
     @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
-
+    private static final long serialVersionUID = -1457944217344577600L;
     /**
      * 自定义方法
      */

@@ -2,6 +2,8 @@ package top.liheji.server.pojo.other;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @Time : 2021/12/29 14:39
  * @Author : Galaxy
@@ -11,7 +13,9 @@ import lombok.Data;
  */
 
 @Data
-public class Course {
+public class Course implements Serializable {
+    private static final long serialVersionUID = 1587842998002988039L;
+
     /*
      * name 课程名
      * day 该课程的是星期几（7代表星期天）参数范围：1 - 7

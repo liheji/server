@@ -4,6 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="top.liheji.server.mapper.PersistentDevicesMapper">
 
+    <cache-ref namespace="top.liheji.server.mapper.PersistentDevicesMapper"/>
+
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.PersistentDevices">
             <id property="type" column="type" jdbcType="VARCHAR"/>
             <result property="username" column="username" jdbcType="VARCHAR"/>
