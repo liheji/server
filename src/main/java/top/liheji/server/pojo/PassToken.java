@@ -52,7 +52,7 @@ public class PassToken implements Serializable {
     private Account account;
 
     @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8530090763294282982L;
 
     /**
      * 自定义方法
@@ -66,6 +66,9 @@ public class PassToken implements Serializable {
     }
 
     public void setExpireStamp(Long expireStamp) {
+        if (expireStamp == null) {
+            expireStamp = 0L;
+        }
         this.expireStamp = expireStamp;
         this.expireTime = new Date(this.expireStamp);
     }

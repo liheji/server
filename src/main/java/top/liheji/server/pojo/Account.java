@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
  * @author Galaxy
  * @TableName server_account
  */
-@TableName(value = "server_account")
 @Data
+@TableName(value = "server_account")
 public class Account implements Serializable {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w\\-]+@[a-z0-9-]+(\\.[a-z0-9-]+)*(\\.[a-z]{2,})$");
     private static final Pattern MOBILE_PATTERN = Pattern.compile("^((\\+86)|(86))?1\\d{10}$");
@@ -55,7 +55,7 @@ public class Account implements Serializable {
      * 非数据库字段
      */
     @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3386845044188835258L;
 
     /**
      * 自定义方法

@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 public class MybatisPlusConfig {
-
     /**
      * 加载分页插件
      */

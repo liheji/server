@@ -64,5 +64,5 @@ public class InvoiceAttr implements Serializable {
     private FileAttr fileAttr;
 
     @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5036149674409320848L;
 }

@@ -35,5 +35,6 @@ public class PersistentLogins implements Serializable {
      * 非数据库字段
      */
     @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4215027610798071043L;
+
 }

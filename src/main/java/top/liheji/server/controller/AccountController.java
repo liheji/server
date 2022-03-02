@@ -82,8 +82,8 @@ public class AccountController {
 
     @GetMapping
     public Map<String, Object> queryAccount(Integer page, Integer limit,
-                                            @RequestParam(required = false) String username,
-                                            @RequestParam(required = false) Boolean isEnabled,
+                                            @RequestParam(required = false, defaultValue = "") String username,
+                                            @RequestParam(required = false, defaultValue = "") Boolean isEnabled,
                                             @RequestAttribute("account") Account current) {
 
         Map<String, Object> map = new HashMap<>(5);

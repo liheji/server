@@ -2,6 +2,8 @@ package top.liheji.server.pojo.other;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @Time : 2022/1/17 21:28
  * @Author : Galaxy
@@ -10,7 +12,9 @@ import lombok.Data;
  * @Description :
  */
 @Data
-public class FileItem {
+public class FileItem implements Serializable {
+    private static final long serialVersionUID = -4780179592202698586L;
+
     private String permit;
     private String user;
     private String group;

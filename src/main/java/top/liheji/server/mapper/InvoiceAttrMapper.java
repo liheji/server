@@ -1,7 +1,9 @@
 package top.liheji.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
+import top.liheji.server.config.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.InvoiceAttr;
 
 /**
@@ -11,6 +13,7 @@ import top.liheji.server.pojo.InvoiceAttr;
 * @Entity top.liheji.server.pojo.InvoiceAttr
 */
 @Mapper
+@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
 public interface InvoiceAttrMapper extends BaseMapper<InvoiceAttr> {
 
 }

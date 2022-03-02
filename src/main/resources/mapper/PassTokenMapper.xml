@@ -4,6 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="top.liheji.server.mapper.PassTokenMapper">
 
+    <cache-ref namespace="top.liheji.server.mapper.PassTokenMapper"/>
+
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.PassToken">
         <id property="id" column="id" jdbcType="INTEGER"/>
         <result property="tokenKey" column="token_key" jdbcType="VARCHAR"/>
