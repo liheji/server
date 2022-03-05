@@ -3,11 +3,11 @@ package top.liheji.server.service;
 import top.liheji.server.pojo.Account;
 
 /**
- * @Time : 2021/12/31 16:09
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverVue
- * @Description : 验证码生成工具
+ * @author : Galaxy
+ * @time : 2022/1/17 21:28
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 验证码生成服务
  */
 public interface CaptchaService {
     /**

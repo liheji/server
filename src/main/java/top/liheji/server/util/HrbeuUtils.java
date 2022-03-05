@@ -16,7 +16,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Galaxy
+ * @author : Galaxy
+ * @time : 2021/10/29 22:29
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 哈尔滨工程大学课程表工具类
  */
 public class HrbeuUtils {
     //需要用到的正则表达式

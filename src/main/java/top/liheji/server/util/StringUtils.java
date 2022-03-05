@@ -3,11 +3,11 @@ package top.liheji.server.util;
 import java.util.UUID;
 
 /**
- * @Time : 2022/2/27 16:41
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverPlus
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/17 14:00
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 字符串工具类
  */
 public class StringUtils {
     private static final String[] UUID_CHARS = {"a", "b", "c", "d", "e", "f",

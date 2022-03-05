@@ -9,11 +9,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Time : 2022/2/26 21:26
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : workmaven
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/10/29 22:29
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 验证码滑块坐标识别工具类
  */
 public class SlideUtils {
     private static final String OS = System.getProperty("os.name").toLowerCase();

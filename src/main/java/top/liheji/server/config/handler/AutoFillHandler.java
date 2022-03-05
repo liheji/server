@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 /**
- * @Time : 2022/1/23 15:14
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : mybatis-gen
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/23 15:14
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置 MybatisPlus的自动填充属性
  */
 @Component
 public class AutoFillHandler implements MetaObjectHandler {

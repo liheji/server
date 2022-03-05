@@ -20,8 +20,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 /**
- * @author Galaxy
+ * @author : Galaxy
+ * @time : 2021/10/29 22:19
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 实现文件相关接口
  */
 @RestController
 @RequestMapping("/fileAttr")

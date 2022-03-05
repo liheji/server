@@ -15,11 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
- * @Time : 2021/11/25 23:46
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/11/25 23:46
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置 Websocket的拦截器，进行连接认证
  */
 @Component
 public class WebSocketInterceptor implements HandshakeInterceptor {

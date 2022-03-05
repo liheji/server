@@ -24,11 +24,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * @Time : 2022/1/30 8:59
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverPlus
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/30 8:59
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 系统登录后自动设置系统用户到 HttpServletRequest 的 Attribute中
  */
 @Component
 public class ParamSetFilter extends OncePerRequestFilter {

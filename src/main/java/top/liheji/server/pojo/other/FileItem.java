@@ -5,11 +5,11 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @Time : 2022/1/17 21:28
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : work
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/17 21:28
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 服务器文件信息实体
  */
 @Data
 public class FileItem implements Serializable {

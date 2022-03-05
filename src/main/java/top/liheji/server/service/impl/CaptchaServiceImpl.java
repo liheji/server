@@ -20,11 +20,11 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Time : 2022/3/1 10:56
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverPlus
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/17 21:28
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 验证码生成服务的具体实现
  */
 @Slf4j
 @Service("captchaService")

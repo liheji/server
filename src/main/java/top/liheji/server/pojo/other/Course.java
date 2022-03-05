@@ -5,13 +5,12 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @Time : 2021/12/29 14:39
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/12/29 14:39
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 课程表实体
  */
-
 @Data
 public class Course implements Serializable {
     private static final long serialVersionUID = 1587842998002988039L;

@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @Time : 2022/1/22 22:22
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : mybatis-gen
- * @Description : MybatisPlus配置类
+ * @author : Galaxy
+ * @time : 2022/1/22 22:22
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 加载MybatisPlus插件
  */
 @Slf4j
 @Configuration

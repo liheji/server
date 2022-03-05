@@ -21,14 +21,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Time : 2022/1/29 20:47
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverVue
- * @Description : 借用用户名密码的过滤器实现验证码功能
+ * @author : Galaxy
+ * @time : 2022/1/29 20:47
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 借用用户名密码的过滤器实现验证码功能
  */
 @Component
-public class CaptchaVerifyFilter extends OncePerRequestFilter {
+public class CaptchaFilter extends OncePerRequestFilter {
     @Autowired
     private CaptchaService captchaService;
 
@@ -39,7 +39,7 @@ public class CaptchaVerifyFilter extends OncePerRequestFilter {
     private static final AntPathRequestMatcher DEFAULT_ANT_PATH_REQUEST_MATCHER = new AntPathRequestMatcher("/login",
             "POST");
 
-    public CaptchaVerifyFilter() {
+    public CaptchaFilter() {
         setMatchers("/login", "/before/forget", "/before/register");
     }
 

@@ -15,16 +15,17 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * @Time : 2021/11/25 23:46
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/11/25 23:46
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置Redis缓存模板类，实现操做Redis数据库
  */
 @Slf4j
 @Configuration
 public class RedisConfig {
-    @Bean("redisTemplate")
+
+    @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         //为了开发的方便，一般直接使用<String, Object>
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();

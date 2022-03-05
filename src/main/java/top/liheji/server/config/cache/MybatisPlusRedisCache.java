@@ -11,11 +11,11 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * @Time : 2022/3/2 10:23
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverPlus
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/3/2 10:23
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 使用 redis实现 MybatisPlus二级缓存
  */
 @Slf4j
 public class MybatisPlusRedisCache implements Cache {
@@ -89,7 +89,6 @@ public class MybatisPlusRedisCache implements Cache {
             redisTemplate.delete(this.id);
         } catch (Exception e) {
             log.error(this.id + " 清空Redis缓存数据错误，信息：" + e);
-            e.printStackTrace();
         }
 
     }
