@@ -85,8 +85,6 @@ public class MybatisPlusRedisCache implements Cache {
     @Override
     public void clear() {
         checkTemplate();
-        log.info("清空缓存");
-
         try {
             redisTemplate.delete(this.id);
         } catch (Exception e) {

@@ -16,14 +16,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import top.liheji.server.config.filter.CaptchaVerifyFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
-import top.liheji.server.config.remember.CustomPersistentTokenRepository;
-import top.liheji.server.config.remember.impl.CustomJdbcTokenRepositoryImpl;
 import top.liheji.server.config.remember.impl.CustomTokenRememberMeServices;
 import top.liheji.server.pojo.Account;
+import top.liheji.server.service.PersistentDevicesService;
+import top.liheji.server.service.PersistentLoginsService;
 import top.liheji.server.util.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +41,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final String rememberKey = StringUtils.genUuid();
 
     @Autowired
-    private DataSource dataSource;
-
-    @Autowired
     private ParamSetFilter paramSetFilter;
 
     @Autowired
@@ -52,6 +48,13 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private UserDetailsService userDetailsService;
+
+    @Autowired
+    private PersistentLoginsService persistentLoginsService;
+
+    @Autowired
+    private PersistentDevicesService persistentDevicesService;
+
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -169,24 +172,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * 注入Security的session数据库表
-     *
-     * @return 数据库操作类
-     */
-    @Bean
-    public CustomPersistentTokenRepository persistentTokenRepository() {
-        CustomJdbcTokenRepositoryImpl jdbcToken = new CustomJdbcTokenRepositoryImpl();
-        jdbcToken.setDataSource(dataSource);
-        return jdbcToken;
-    }
-
-    /**
      * 注入Security的rememberMeServices数据库表
      *
      * @return 数据库服务类
      */
     @Bean
     public CustomTokenRememberMeServices rememberMeServices() {
-        return new CustomTokenRememberMeServices(rememberKey, userDetailsService, persistentTokenRepository());
+        return new CustomTokenRememberMeServices(rememberKey, userDetailsService, persistentLoginsService, persistentDevicesService);
     }
 }

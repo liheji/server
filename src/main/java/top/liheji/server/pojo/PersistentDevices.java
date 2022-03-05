@@ -26,6 +26,8 @@ public class PersistentDevices implements Serializable {
 
     private String username;
 
+    private String ip;
+
     private String series;
 
     private String browser;
@@ -46,6 +48,7 @@ public class PersistentDevices implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = -1457944217344577600L;
+
     /**
      * 自定义方法
      */
