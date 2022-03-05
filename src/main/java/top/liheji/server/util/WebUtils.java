@@ -170,9 +170,24 @@ public class WebUtils {
     /**
      * 解析UserAgent
      *
+     * @param request HttpServletRequest
+     */
+    public static PersistentDevices parseAgent(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        PersistentDevices ret = parseAgent(userAgent);
+        if (ret != null) {
+            Map<String, Object> ipInfo = getIp(request);
+            ret.setIp((String) ipInfo.get("ip"));
+        }
+        return ret;
+    }
+
+    /**
+     * 解析UserAgent
+     *
      * @param agentStr useragentStr
      */
-    public static PersistentDevices parseAgent(String agentStr) {
+    private static PersistentDevices parseAgent(String agentStr) {
         try {
             UserAgent agent = UserAgent.parseUserAgentString(agentStr);
             Browser browser = agent.getBrowser();

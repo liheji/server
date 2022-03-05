@@ -24,9 +24,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.*;
 import org.springframework.util.Assert;
-import top.liheji.server.config.remember.CustomPersistentTokenRepository;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.PersistentDevices;
+import top.liheji.server.pojo.PersistentLogins;
+import top.liheji.server.service.PersistentDevicesService;
+import top.liheji.server.service.PersistentLoginsService;
 import top.liheji.server.util.WebUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,12 +43,6 @@ import java.util.Date;
  * <a href="http://jaspan.com/improved_persistent_login_cookie_best_practice">Improved
  * Persistent Login Cookie Best Practice</a>.
  * <p>
- * There is a slight modification to the described approach, in that the username is not
- * stored as part of the cookie but obtained from the persistent store via an
- * implementation of {@link CustomPersistentTokenRepository}. The latter should place a unique
- * constraint on the series identifier, so that it is impossible for the same identifier
- * to be allocated to two different users.
- *
  * <p>
  * User management such as changing passwords, removing users and setting user status
  * should be combined with maintenance of the user's persistent tokens.
@@ -74,8 +70,9 @@ import java.util.Date;
  * @since 2.0
  */
 public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServices {
+    private final PersistentLoginsService persistentLoginsService;
 
-    private final CustomPersistentTokenRepository tokenRepository;
+    private final PersistentDevicesService persistentDevicesService;
 
     private final SecureRandom random;
 
@@ -87,12 +84,15 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
 
     private int tokenLength = DEFAULT_TOKEN_LENGTH;
 
-    public CustomTokenRememberMeServices(String key, UserDetailsService userDetailsService,
-                                         CustomPersistentTokenRepository tokenRepository) {
+    public CustomTokenRememberMeServices(String key,
+                                         UserDetailsService userDetailsService,
+                                         PersistentLoginsService loginsService,
+                                         PersistentDevicesService devicesService) {
         //设置默认参数
         super(key, userDetailsService);
         this.random = new SecureRandom();
-        this.tokenRepository = tokenRepository;
+        this.persistentLoginsService = loginsService;
+        this.persistentDevicesService = devicesService;
         super.setAlwaysRemember(true);
     }
 
@@ -118,24 +118,26 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
         }
         String presentedSeries = cookieTokens[0];
         String presentedToken = cookieTokens[1];
-        PersistentRememberMeToken token = this.tokenRepository.getTokenForSeries(presentedSeries);
+        PersistentLogins token = persistentLoginsService.getById(presentedSeries);
         if (token == null) {
             // No series match, so we can't authenticate using this cookie
             throw new RememberMeAuthenticationException("No persistent token found for series id: " + presentedSeries);
         }
         // We have a match for this user/series combination
-        if (!presentedToken.equals(token.getTokenValue())) {
+        if (!presentedToken.equals(token.getToken())) {
             // Token doesn't match series value. Delete all logins for this user and throw
             // an exception to warn them.
-            this.tokenRepository.updateDeviceSeriesEmpty(token.getSeries());
-            this.tokenRepository.removeUserToken(token.getSeries());
+            PersistentDevices devices = new PersistentDevices();
+            devices.setSeries("");
+            this.persistentDevicesService.update(devices, new QueryWrapper<PersistentDevices>().eq("series", token.getSeries()));
+            this.persistentLoginsService.removeById(token.getSeries());
             throw new CookieTheftException(this.messages.getMessage(
                     "PersistentTokenBasedRememberMeServices.cookieStolen",
                     "Invalid remember-me token (Series/token) mismatch. Implies previous cookie theft attack."));
         }
 
-        if (token.getDate().getTime() == 0 ||
-                token.getDate().getTime() + getTokenValiditySeconds() * 1000L < System.currentTimeMillis()) {
+        if (token.getLastUsed().getTime() == 0 ||
+                token.getLastUsed().getTime() + getTokenValiditySeconds() * 1000L < System.currentTimeMillis()) {
             throw new RememberMeAuthenticationException("Remember-me login has expired");
         }
 
@@ -143,18 +145,22 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
         // *same* series number.
         this.logger.debug(LogMessage.format("Refreshing persistent login token for user '%s', series '%s'",
                 token.getUsername(), token.getSeries()));
-        PersistentRememberMeToken newToken = new PersistentRememberMeToken(token.getUsername(), token.getSeries(),
+        PersistentLogins newToken = new PersistentLogins(token.getUsername(), token.getSeries(),
                 generateTokenData(), new Date());
 
         try {
-            this.tokenRepository.updateToken(newToken.getSeries(), newToken.getTokenValue(), newToken.getDate());
+            this.persistentLoginsService.updateById(newToken);
             addCookie(newToken, request, response);
-            PersistentDevices device = WebUtils.parseAgent(request.getHeader("User-Agent"));
+            PersistentDevices device = WebUtils.parseAgent(request);
             if (device != null) {
                 device.setUsername(newToken.getUsername());
                 device.setSeries(newToken.getSeries());
                 device.setLastUsed(new Date());
-                this.tokenRepository.updateDevice(device);
+                this.persistentDevicesService.update(device,
+                        new QueryWrapper<PersistentDevices>()
+                                .eq("type", device.getType())
+                                .eq("username", device.getUsername())
+                );
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
             }
@@ -176,11 +182,11 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
         String username = successfulAuthentication.getName();
         this.logger.debug(LogMessage.format("Creating new persistent login for user %s", username));
         Date curDate = new Date();
-        PersistentRememberMeToken persistentToken = new PersistentRememberMeToken(username, generateSeriesData(),
+        PersistentLogins persistentToken = new PersistentLogins(username, generateSeriesData(),
                 generateTokenData(), curDate);
         try {
             //************* 修改此处 ***************
-            PersistentDevices device = WebUtils.parseAgent(request.getHeader("User-Agent"));
+            PersistentDevices device = WebUtils.parseAgent(request);
             if (device != null) {
                 device.setUsername(username);
                 device.setSeries(persistentToken.getSeries());
@@ -188,20 +194,23 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
                 String paramValue = request.getParameter(getParameter());
                 if (paramValue != null) {
                     if (!paramValue.equalsIgnoreCase("true") && !paramValue.equals("1")) {
-                        persistentToken = new PersistentRememberMeToken(username, persistentToken.getSeries(),
-                                persistentToken.getTokenValue(), new Date(0L));
+                        persistentToken = new PersistentLogins(username, persistentToken.getSeries(),
+                                persistentToken.getToken(), new Date(0L));
                     }
                 }
-                this.tokenRepository.createNewToken(persistentToken);
+                this.persistentLoginsService.save(persistentToken);
                 addCookie(persistentToken, request, response);
 
-                if (this.tokenRepository.isExitDevice(device.getType(), username)) {
-                    this.tokenRepository.updateDevice(device);
-                } else {
-                    this.tokenRepository.createNewDevice(device);
-                }
+                this.persistentDevicesService.saveOrUpdate(device,
+                        new QueryWrapper<PersistentDevices>()
+                                .eq("type", device.getType())
+                                .eq("username", username)
+                );
 
-                this.tokenRepository.deleteTokenNotInDevice(username);
+                this.persistentLoginsService.remove(new QueryWrapper<PersistentLogins>()
+                        .eq("username", username)
+                        .last(String.format("and series not in (select series from persistent_devices where username = '%s')", username))
+                );
                 Account cur = accountMapper.selectOne(new QueryWrapper<Account>().eq("username", username));
                 if (cur != null) {
                     cur.setLastLogin(curDate);
@@ -227,18 +236,27 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
                 }
 
                 String[] cookieTokens = decodeCookie(rememberMeCookie);
-                PersistentRememberMeToken token = this.tokenRepository.getTokenForSeries(cookieTokens[0]);
+                PersistentLogins token = this.persistentLoginsService.getById(cookieTokens[0]);
+                PersistentDevices emptyDevices = new PersistentDevices();
+                emptyDevices.setSeries("");
                 if (token != null) {
-                    this.tokenRepository.removeUserToken(token.getSeries());
-                    this.tokenRepository.updateDeviceSeriesEmpty(token.getSeries());
+                    this.persistentLoginsService.removeById(token.getSeries());
+                    this.persistentDevicesService.update(emptyDevices, new QueryWrapper<PersistentDevices>().eq("series", token.getSeries()));
                 }
 
-                PersistentDevices device = WebUtils.parseAgent(request.getHeader("User-Agent"));
+                PersistentDevices device = WebUtils.parseAgent(request);
                 if (device != null) {
-                    this.tokenRepository.updateDeviceSeries("", device.getType(), authentication.getName());
+                    this.persistentDevicesService.update(emptyDevices,
+                            new QueryWrapper<PersistentDevices>()
+                                    .eq("type", device.getType())
+                                    .eq("username", authentication.getName())
+                    );
                 }
 
-                this.tokenRepository.deleteTokenNotInDevice(authentication.getName());
+                this.persistentLoginsService.remove(new QueryWrapper<PersistentLogins>()
+                        .eq("username", authentication.getName())
+                        .last(String.format("and series not in (select series from persistent_devices where username = %s)", authentication.getName()))
+                );
             } catch (Exception ignored) {
             }
         }
@@ -257,8 +275,8 @@ public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServi
         return new String(Base64.getEncoder().encode(newToken));
     }
 
-    private void addCookie(PersistentRememberMeToken token, HttpServletRequest request, HttpServletResponse response) {
-        setCookie(new String[]{token.getSeries(), token.getTokenValue()}, getTokenValiditySeconds(), request,
+    private void addCookie(PersistentLogins token, HttpServletRequest request, HttpServletResponse response) {
+        setCookie(new String[]{token.getSeries(), token.getToken()}, getTokenValiditySeconds(), request,
                 response);
     }
 

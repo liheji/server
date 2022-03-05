@@ -36,9 +36,16 @@ spring:
     port: 6379
     timeout: 300
     connectTimeout: 600
+    lettuce:
+      pool:
+        max-active: 10
+        max-wait: -1
+        min-idle: 1
     jedis:
       pool:
-        max-active: 50
+        max-active: 10
+        max-wait: -1
+        min-idle: 1
 
 mybatis-plus:
   type-aliases-package: top.liheji.pojo

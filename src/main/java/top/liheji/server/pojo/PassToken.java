@@ -66,10 +66,9 @@ public class PassToken implements Serializable {
     }
 
     public void setExpireStamp(Long expireStamp) {
-        if (expireStamp == null) {
-            expireStamp = 0L;
+        if (expireStamp != null) {
+            this.expireStamp = expireStamp;
+            this.expireTime = new Date(this.expireStamp);
         }
-        this.expireStamp = expireStamp;
-        this.expireTime = new Date(this.expireStamp);
     }
 }

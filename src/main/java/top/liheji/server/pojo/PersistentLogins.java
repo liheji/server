@@ -37,4 +37,13 @@ public class PersistentLogins implements Serializable {
     @TableField(exist = false)
     private static final long serialVersionUID = -4215027610798071043L;
 
+    public PersistentLogins() {
+    }
+
+    public PersistentLogins(String username, String series, String token, Date lastUsed) {
+        this.series = series;
+        this.username = username;
+        this.token = token;
+        this.lastUsed = lastUsed;
+    }
 }

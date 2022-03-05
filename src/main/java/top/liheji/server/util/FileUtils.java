@@ -241,6 +241,35 @@ public class FileUtils {
     }
 
     /**
+     * 将字符串切割为文件名和后缀
+     *
+     * @param filePath 文件路径
+     * @return 文件文件名和后缀
+     */
+    private static String[] splitText(String filePath) {
+        return splitText(new File(filePath));
+    }
+
+    /**
+     * 将字符串切割为文件名和后缀
+     *
+     * @param file 文件
+     * @return 文件文件名和后缀
+     */
+    private static String[] splitText(File file) {
+        String fileName = file.getName();
+        int index = fileName.lastIndexOf(".");
+        if (index < 0) {
+            index = fileName.length();
+        }
+
+        return new String[]{
+                new File(file.getParentFile(), fileName.substring(0, index)).getAbsolutePath(),
+                fileName.substring(index)
+        };
+    }
+
+    /**
      * 路径格式化
      *
      * @param args 路径参数列表

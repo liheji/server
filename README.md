@@ -15,19 +15,26 @@
 #### 注意，以下依赖均为本地依赖，负责将Office转化为pdf作为预览
 
 ```xml
+<!-- 本地opencv -->
 <dependency>
-    <groupId>com.aspose</groupId>
-    <artifactId>aspose-words</artifactId>
-    <version>22.1.0</version>
+    <groupId>org.opencv</groupId>
+    <artifactId>opencv</artifactId>
+    <version>3.4.13</version>
+</dependency>
+<!-- 本地 Office文件操作(word,excel,ppt) -->
+<dependency>
+<groupId>com.aspose</groupId>
+<artifactId>aspose-words</artifactId>
+<version>22.1.0</version>
 </dependency>
 <dependency>
-    <groupId>com.aspose</groupId>
-    <artifactId>aspose-cells</artifactId>
-    <version>22.1</version>
+<groupId>com.aspose</groupId>
+<artifactId>aspose-cells</artifactId>
+<version>22.1</version>
 </dependency>
 <dependency>
-    <groupId>com.aspose</groupId>
-    <artifactId>aspose-slides</artifactId>
-    <version>22.1</version>
+<groupId>com.aspose</groupId>
+<artifactId>aspose-slides</artifactId>
+<version>22.1</version>
 </dependency>
 ```
