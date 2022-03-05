@@ -8,24 +8,24 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import top.liheji.server.mapper.AccountMapper;
 import top.liheji.server.pojo.Account;
+import top.liheji.server.service.AccountService;
 
 /**
- * @Time : 2022/1/24 13:05
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : mybatis-gen
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/24 13:05
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置 SpringSecurity 的用户加载，获取数据库中的用户
  */
 @Service("userDetailsService")
 public class CustomUserDetailsServiceImpl implements UserDetailsService {
     @Autowired
-    private AccountMapper accountMapper;
+    private AccountService accountService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Account account = accountMapper.selectOne(
+        Account account = accountService.getOne(
                 new QueryWrapper<Account>()
                         .eq("username", username)
                         .or()

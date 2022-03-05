@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Time : 2021/10/29 22:19
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/10/29 22:19
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 实现登录设备相关接口
  */
 @RestController
 @RequestMapping("/device")

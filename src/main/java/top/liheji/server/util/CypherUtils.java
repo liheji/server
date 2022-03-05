@@ -6,11 +6,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 /**
- * @Time : 2021/10/29 22:29
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description : 加密工具
+ * @author : Galaxy
+ * @time : 2021/10/29 22:29
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 加密工具类
  */
 public class CypherUtils {
     private static final String[] BYTE_CHARS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};

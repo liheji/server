@@ -11,11 +11,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Time : 2022/2/4 10:38
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverPlus
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/2/4 10:38
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 实现登录后非实体相关接口
  */
 @RestController
 @RequestMapping("/before")

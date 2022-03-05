@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import top.liheji.server.config.filter.CaptchaVerifyFilter;
+import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
 import top.liheji.server.config.remember.impl.CustomTokenRememberMeServices;
 import top.liheji.server.pojo.Account;
@@ -28,11 +28,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Time : 2022/1/24 13:21
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : mybatis-gen
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/24 13:21
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置 SpringSecurity 相关配置
+ * 加载过滤器
+ * 设置放行URL
+ * 设置登录成功和登录失败回调
+ * 设置登出回调
+ * 设置记住密码功能
+ * 设置未登录访问请求拦截
  */
 @Slf4j
 @Configuration
@@ -44,7 +50,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private ParamSetFilter paramSetFilter;
 
     @Autowired
-    private CaptchaVerifyFilter captchaVerifyFilter;
+    private CaptchaFilter captchaFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -66,7 +72,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //验证码过滤器
-        http.addFilterBefore(captchaVerifyFilter, UsernamePasswordAuthenticationFilter.class)
+        http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(paramSetFilter, UsernamePasswordAuthenticationFilter.class);
 
         // 路径拦截设置

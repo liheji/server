@@ -17,7 +17,11 @@ import java.security.MessageDigest;
 import java.util.Stack;
 
 /**
- * @author Galaxy
+ * @author : Galaxy
+ * @time : 2021/10/29 22:29
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 文件相关工具类
  */
 @Slf4j
 public class FileUtils {

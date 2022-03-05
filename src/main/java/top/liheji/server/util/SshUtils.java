@@ -15,11 +15,11 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * @Time : 2022/1/17 14:00
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : work
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/17 14:00
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : SSH连接工具类
  */
 public class SshUtils {
     private final JSch jSch;

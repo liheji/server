@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Time : 2021/11/6 10:12
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/11/6 10:12
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 实现通行认证Token相关接口
  */
 @RestController
 @RequestMapping("/passToken")

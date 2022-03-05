@@ -20,11 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Time : 2021/10/29 22:23
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/10/29 22:23
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 网络相关工具类
  */
 public class WebUtils {
     public static final String[] IP_STR = {

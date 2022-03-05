@@ -23,11 +23,11 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * @Time : 2021/12/30 15:38
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverVue
- * @Description : 不提供页面的统一放在这里
+ * @author : Galaxy
+ * @time : 2021/12/30 15:38
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 实现用户登录前访问相关接口
  */
 @RestController
 public class AfterController {

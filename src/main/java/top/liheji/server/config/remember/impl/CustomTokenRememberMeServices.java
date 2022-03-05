@@ -39,37 +39,15 @@ import java.util.Base64;
 import java.util.Date;
 
 /**
- * {@link RememberMeServices} implementation based on Barry Jaspan's
- * <a href="http://jaspan.com/improved_persistent_login_cookie_best_practice">Improved
- * Persistent Login Cookie Best Practice</a>.
- * <p>
- * <p>
- * User management such as changing passwords, removing users and setting user status
- * should be combined with maintenance of the user's persistent tokens.
- * </p>
- *
- * <p>
- * Note that while this class will use the date a token was created to check whether a
- * presented cookie is older than the configured <tt>tokenValiditySeconds</tt> property
- * and deny authentication in this case, it will not delete these tokens from storage. A
- * suitable batch process should be run periodically to remove expired tokens from the
- * database.
- * </p>
- * <p>
- * 重写 {@link PersistentTokenBasedRememberMeServices}类
- * 修改 processAutoLoginCookie方法
- * 增加：登录设备的修改登录token的删除
- * <p>
- * 修改 onLoginSuccess 方法
- * 增加：登录设备的记录
- * <p>
- * 修改 logout 方法
- * 增加：登录设备的注销
- *
- * @author Luke Taylor
- * @since 2.0
+ * @author : Galaxy
+ * @time : 2022/3/5 16:54
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 重写记住密码功能
+ * 增加记住登录设备功能
+ * 使用 MybatisPlus操作数据库
  */
-public class CustomTokenRememberMeServices extends CustomAbstractRememberMeServices {
+public class CustomTokenRememberMeServices extends top.liheji.server.config.remember.impl.CustomAbstractRememberMeServices {
     private final PersistentLoginsService persistentLoginsService;
 
     private final PersistentDevicesService persistentDevicesService;

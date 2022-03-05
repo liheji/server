@@ -10,11 +10,12 @@ import top.liheji.server.config.handler.WebsocketHandler;
 import top.liheji.server.config.intercept.WebSocketInterceptor;
 
 /**
- * @Time : 2021/11/25 23:46
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description :
+ * @author : Galaxy
+ * @time : 2021/11/25 23:46
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置 WebSocket 相关配置
+ * 设置连接URL，并允许跨域访问
  */
 @Slf4j
 @Configuration

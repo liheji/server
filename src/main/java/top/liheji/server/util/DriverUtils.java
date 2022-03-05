@@ -15,11 +15,11 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @Time : 2021/10/28 20:44
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : server
- * @Description : 浏览器驱动工具
+ * @author : Galaxy
+ * @time : 2021/10/29 22:29
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 浏览器驱动工具类
  */
 @Slf4j
 public class DriverUtils {

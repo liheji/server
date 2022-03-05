@@ -63,18 +63,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Base class for RememberMeServices implementations.
- * 重写 {@link AbstractRememberMeServices}的 autologin方法
- * 实现以下功能：
- * -> passToken登录
- * -> 登录设备验证
+ * @author : Galaxy
+ * @time : 2022/1/24 13:05
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 重写{@link AbstractRememberMeServices}
+ * 实现基于数据库的用户自动登录认证
+ * 实现 PassToken登录，登录设备验证
  * 修改 cookieName和 parameter重新设置名称
- *
- * @author Luke Taylor
- * @author Rob Winch
- * @author Eddú Meléndez
- * @author Onur Kagan Ozcan
- * @since 2.0
  */
 public abstract class CustomAbstractRememberMeServices implements RememberMeServices, InitializingBean, LogoutHandler, MessageSourceAware {
 

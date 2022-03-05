@@ -2,7 +2,6 @@ package top.liheji.server.config.handler;
 
 
 import com.alibaba.fastjson.JSONObject;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
@@ -18,15 +17,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 /**
- * @Time : 2022/1/10 10:29
- * @Author : Galaxy
- * @Create : IdeaJ
- * @Project : serverVue
- * @Description :
+ * @author : Galaxy
+ * @time : 2022/1/10 10:29
+ * @create : IdeaJ
+ * @project : serverPlus
+ * @description : 设置 Websocket的实现类，处理socket传输的数据
  */
-@Slf4j
 @Component
 public class WebsocketHandler extends AbstractWebSocketHandler {
     public final Map<String, Map<String, Object>> clientMap = new ConcurrentHashMap<>();
