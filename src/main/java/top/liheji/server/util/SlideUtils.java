@@ -16,21 +16,39 @@ import java.util.Map;
  * @description : 验证码滑块坐标识别工具类
  */
 public class SlideUtils {
+    private static SlideUtils slide;
     private static final String OS = System.getProperty("os.name").toLowerCase();
 
-    public SlideUtils() {
-        String fileName;
+    /**
+     * SlideUtils 私有化构造器，只能创建一个
+     */
+    private SlideUtils() {
+        File file;
         if (OS.contains("windows")) {
-            fileName = "opencv_java3413.dll";
+            file = FileUtils.resourceFile("data", "opencv_java346.dll");
         } else if (OS.contains("linux")) {
-            fileName = "libopencv_java3413.so";
+            file = new File(ConsoleUtils.SERVER_STATIC_PATH, "libopencv_java346.so");
         } else {
             throw new RuntimeException("Platform not supported！");
         }
 
-        File driverFile = FileUtils.resourceFile("data", fileName);
+        System.load(file.getAbsolutePath());
+    }
 
-        System.load(driverFile.getAbsolutePath());
+    /**
+     * 获取当前实例
+     *
+     * @return 单一实例
+     */
+    public static SlideUtils getInstance() {
+        if (slide == null) {
+            synchronized (SlideUtils.class) {
+                if (slide == null) {
+                    slide = new SlideUtils();
+                }
+            }
+        }
+        return slide;
     }
 
     public Map<String, Object> discernSlideImg(String slidePath, String bgPath) {

@@ -1,6 +1,5 @@
 package top.liheji.server.util;
 
-import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
@@ -8,8 +7,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class DriverUtils {
     private static DriverUtils driver;
-    private static boolean isPermit = false;
     private static final String OS = System.getProperty("os.name").toLowerCase();
 
     private WebDriver webDriver;
@@ -34,29 +30,19 @@ public class DriverUtils {
      * WebDriver 私有化构造器，只能创建一个
      */
     private DriverUtils() {
-        String fileName;
+        File file;
         if (OS.contains("windows")) {
-            fileName = "geckodriver_win.exe";
+            file = FileUtils.resourceFile("data", "geckodriver_win.exe");
         } else if (OS.contains("linux")) {
-            fileName = "geckodriver_linux";
+            file = new File(ConsoleUtils.SERVER_STATIC_PATH, "geckodriver_linux");
         } else {
             throw new RuntimeException("Platform not supported！");
         }
 
-        File driverFile = FileUtils.resourceFile("data", fileName);
-
-        //对 geckodriver_linux执行授权
-        if (OS.contains("linux") && !isPermit) {
-            String res = executeCmd(String.format("ls -l %s|awk '{print $1}'", driverFile.getAbsolutePath()));
-
-            if (res == null || !res.contains("x")) {
-                executeCmd(String.format("chmod +x %s", driverFile.getAbsolutePath()));
-            }
-            isPermit = true;
-        }
+        ConsoleUtils.authorize(file.getAbsolutePath());
 
         //设置 geckodriver路径
-        System.setProperty("webdriver.gecko.driver", driverFile.getAbsolutePath());
+        System.setProperty("webdriver.gecko.driver", file.getAbsolutePath());
     }
 
 
@@ -146,34 +132,6 @@ public class DriverUtils {
     public void timeClose() {
         new Timer().schedule(new CloseTask(), 20 * 60 * 1000);
     }
-
-    /**
-     * 执行命令
-     *
-     * @param cmd 命令
-     * @return 返回执行结果
-     */
-    private static String executeCmd(String cmd) {
-        String[] cmdArr = {"/bin/sh", "-c", cmd};
-        Runtime run = Runtime.getRuntime();
-        try {
-            @Cleanup("destroy") Process process = (cmd != null && cmd.contains("|")) ? run.exec(cmdArr) : run.exec(cmd);
-            @Cleanup InputStream in = process.getInputStream();
-            StringBuilder builder = new StringBuilder();
-
-            int len = 0;
-            byte[] bytes = new byte[1024];
-            while ((len = in.read(bytes)) != -1) {
-                builder.append(new String(bytes, 0, len));
-            }
-
-            return builder.toString();
-        } catch (IOException e) {
-            log.error("远程代码执行错误：" + e);
-        }
-        return null;
-    }
-
 
     private static class CloseTask extends TimerTask {
         private static long CLOSE_TIME = 0;
