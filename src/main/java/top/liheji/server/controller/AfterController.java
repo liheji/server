@@ -92,7 +92,7 @@ public class AfterController {
         Map<String, Object> map = new HashMap<>(2);
         map.put("code", 0);
         map.put("msg", "识别成功");
-        SlideUtils side = new SlideUtils();
+        SlideUtils side = SlideUtils.getInstance();
         switch (discernType) {
             case "slide":
                 map.put("data", side.discernSlideImg(frontIn.getPath(), bgIn.getPath()));

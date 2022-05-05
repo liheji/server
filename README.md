@@ -23,18 +23,18 @@
 </dependency>
 <!-- 本地 Office文件操作(word,excel,ppt) -->
 <dependency>
-<groupId>com.aspose</groupId>
-<artifactId>aspose-words</artifactId>
-<version>22.1.0</version>
+    <groupId>com.aspose</groupId>
+    <artifactId>aspose-words</artifactId>
+    <version>22.1.0</version>
 </dependency>
 <dependency>
-<groupId>com.aspose</groupId>
-<artifactId>aspose-cells</artifactId>
-<version>22.1</version>
+    <groupId>com.aspose</groupId>
+    <artifactId>aspose-cells</artifactId>
+    <version>22.1</version>
 </dependency>
 <dependency>
-<groupId>com.aspose</groupId>
-<artifactId>aspose-slides</artifactId>
-<version>22.1</version>
+    <groupId>com.aspose</groupId>
+    <artifactId>aspose-slides</artifactId>
+    <version>22.1</version>
 </dependency>
 ```

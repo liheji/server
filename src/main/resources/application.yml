@@ -31,11 +31,11 @@ spring:
         smtp:
           socketFactoryClass: javax.net.ssl.SSLSocketFactory
   redis:
-    database: 0
+    database: 1
     host: 127.0.0.1
     port: 6379
-    timeout: 300
-    connectTimeout: 600
+    timeout: 30000
+    connectTimeout: 60000
     lettuce:
       pool:
         max-active: 10
