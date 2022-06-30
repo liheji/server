@@ -13,7 +13,7 @@ import top.liheji.server.pojo.PersistentDevices;
 * @Entity top.liheji.pojo.PersistentDevices
 */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
+@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface PersistentDevicesMapper extends BaseMapper<PersistentDevices> {
 
 }

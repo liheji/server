@@ -13,7 +13,7 @@ import top.liheji.server.pojo.PassToken;
  * @Entity top.liheji.pojo.PassToken
  */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
+@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface PassTokenMapper extends BaseMapper<PassToken> {
 
     /**

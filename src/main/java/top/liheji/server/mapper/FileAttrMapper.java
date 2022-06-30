@@ -13,7 +13,7 @@ import top.liheji.server.pojo.FileAttr;
 * @Entity top.liheji.pojo.FileAttr
 */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
+@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface FileAttrMapper extends BaseMapper<FileAttr> {
 
 }

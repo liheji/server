@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
 import top.liheji.server.config.remember.impl.CustomTokenRememberMeServices;
@@ -152,10 +153,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .key(rememberKey)
                 .rememberMeServices(rememberMeServices());
 
-        // 未登录以及登录认证设置
+        // 跨域攻击拦截
         http.csrf()
-                .disable()
-                .exceptionHandling()
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+
+        // 未登录以及登录认证设置
+        http.exceptionHandling()
                 .authenticationEntryPoint((req, resp, authException) -> {
                     String tid = req.getParameter("token");
                     if (tid == null || "".equals(tid.trim())) {
