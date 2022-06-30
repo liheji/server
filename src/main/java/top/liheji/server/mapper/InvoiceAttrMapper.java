@@ -13,7 +13,7 @@ import top.liheji.server.pojo.InvoiceAttr;
 * @Entity top.liheji.server.pojo.InvoiceAttr
 */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
+@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface InvoiceAttrMapper extends BaseMapper<InvoiceAttr> {
 
 }

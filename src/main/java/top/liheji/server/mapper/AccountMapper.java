@@ -13,7 +13,7 @@ import top.liheji.server.pojo.Account;
  * @Entity top.liheji.pojo.Account
  */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
+@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface AccountMapper extends BaseMapper<Account> {
 
 }

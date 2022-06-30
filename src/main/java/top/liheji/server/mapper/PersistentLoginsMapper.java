@@ -13,7 +13,7 @@ import top.liheji.server.pojo.PersistentLogins;
 * @Entity top.liheji.pojo.PersistentLogins
 */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class, eviction = MybatisPlusRedisCache.class)
+@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface PersistentLoginsMapper extends BaseMapper<PersistentLogins> {
 
 }

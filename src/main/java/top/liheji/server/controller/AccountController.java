@@ -90,7 +90,8 @@ public class AccountController {
 
         QueryWrapper<Account> wrapper = new QueryWrapper<Account>()
                 .like("username", username)
-                .ne("username", current.getUsername());
+                .ne("username", current.getUsername())
+                .ne("username", "admin");
 
         if (isEnabled != null) {
             wrapper = wrapper.eq("is_enabled", isEnabled);
@@ -118,6 +119,11 @@ public class AccountController {
         account.clearOthers();
 
         boolean execute = true;
+        if (!account.equals(current) && "admin".equals(account.getUsername())) {
+            map.put("msg", "非法操作");
+            execute = false;
+        }
+
         if (account.notMatchEmail()) {
             map.put("msg", "邮箱格式错误");
             execute = false;
@@ -146,6 +152,9 @@ public class AccountController {
         int del = 0;
         for (String sp : ids) {
             Account cur = accountService.getById(Integer.parseInt(sp));
+            if ("admin".equals(cur.getUsername())) {
+                continue;
+            }
             cur.setIsEnabled(!cur.getIsEnabled());
             if (accountService.updateById(cur)) {
                 del++;

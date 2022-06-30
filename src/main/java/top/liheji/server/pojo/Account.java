@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -103,5 +104,17 @@ public class Account implements Serializable {
 
     public boolean matchPassword(String password) {
         return this.password != null && ENCODER.matches(this.password, password);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Account account = (Account) o;
+        return Objects.equals(username, account.username);
     }
 }
