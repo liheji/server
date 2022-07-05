@@ -17,15 +17,28 @@
         <result property="mobile" column="mobile" jdbcType="VARCHAR"/>
         <result property="email" column="email" jdbcType="VARCHAR"/>
         <result property="isEnabled" column="is_enabled" jdbcType="BIT"/>
+        <result property="isSuperuser" column="is_superuser" jdbcType="BIT"/>
         <result property="lastLogin" column="last_login" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="version" column="version" jdbcType="INTEGER"/>
+        <collection property="authGroups"
+                    column="id"
+                    javaType="top.liheji.server.pojo.AuthGroup"
+                    fetchType="lazy"
+                    select="top.liheji.server.mapper.AuthAccountGroupsMapper.selectGroupByAccountId">
+        </collection>
+        <collection property="authPermissions"
+                    column="id"
+                    javaType="top.liheji.server.pojo.AuthPermission"
+                    fetchType="lazy"
+                    select="top.liheji.server.mapper.AuthAccountPermissionsMapper.selectPermissionByAccountId">
+        </collection>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,username,password,
-        mobile,email,is_enabled,
+        mobile,email,is_enabled,is_superuser,
         last_login,update_time,create_time,
         version
     </sql>

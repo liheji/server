@@ -1,6 +1,6 @@
 package top.liheji.server.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
@@ -32,7 +32,7 @@ public class BeforeController {
         map.put("code", 1);
         map.put("msg", "用户不存在");
 
-        Account account = accountService.getOne(new QueryWrapper<Account>().eq("email", email));
+        Account account = accountService.getOne(new LambdaQueryWrapper<Account>().eq(Account::getEmail, email));
         if (account != null) {
             if (captchaService.checkCaptcha(key)) {
                 account.setPassword(password);
@@ -86,7 +86,7 @@ public class BeforeController {
         map.put("code", 1);
         map.put("msg", "用户不存在");
 
-        Account account = accountService.getOne(new QueryWrapper<Account>().eq("email", receiver));
+        Account account = accountService.getOne(new LambdaQueryWrapper<Account>().eq(Account::getEmail, receiver));
         if (account != null) {
             captchaService.sendEmailCaptcha(receiver);
             map.put("code", 0);
@@ -96,13 +96,13 @@ public class BeforeController {
         return map;
     }
 
-    @GetMapping("usernameCheck")
-    public Map<String, Object> usernameCheck(String username) {
+    @GetMapping("uniqueCheck")
+    public Map<String, Object> uniqueCheck(String param) {
         long count = accountService.count(
-                new QueryWrapper<Account>()
-                        .eq("username", username)
+                new LambdaQueryWrapper<Account>()
+                        .eq(Account::getUsername, param)
                         .or()
-                        .eq("email", username)
+                        .eq(Account::getEmail, param)
         );
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);

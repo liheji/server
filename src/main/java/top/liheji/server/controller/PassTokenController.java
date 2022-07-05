@@ -1,8 +1,10 @@
 package top.liheji.server.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.PassToken;
@@ -29,14 +31,15 @@ public class PassTokenController {
     private PassTokenService passTokenService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('view_pass_token')")
     public Map<String, Object> queryPassToken(Integer page, Integer limit,
                                               @RequestAttribute("account") Account current,
                                               @RequestParam(required = false, defaultValue = "") String tokenNote) {
         Page<PassToken> tokenPage = passTokenService.page(
                 new Page<>(page, limit),
-                new QueryWrapper<PassToken>()
-                        .like("token_note", tokenNote)
-                        .eq("account_id", current.getId())
+                new LambdaQueryWrapper<PassToken>()
+                        .like(PassToken::getTokenNote, tokenNote)
+                        .eq(PassToken::getAccountId, current.getId())
         );
 
         List<PassToken> tokenList = tokenPage.getRecords();
@@ -50,6 +53,7 @@ public class PassTokenController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('add_pass_token')")
     public Map<String, Object> insertPassToken(PassToken passToken, @RequestAttribute("account") Account current) {
         passToken.setTokenKey(StringUtils.genUuidWithoutLine());
         passToken.setAccountId(current.getId());
@@ -65,36 +69,32 @@ public class PassTokenController {
     }
 
     @DeleteMapping
-    public Map<String, Object> deletePassToken(String id, @RequestAttribute("account") Account current) {
-        String[] ids = id.split(",");
-        int del = 0;
-        for (String sp : ids) {
-            if (
-                    passTokenService.remove(new QueryWrapper<PassToken>()
-                            .like("id", Integer.parseInt(sp))
-                            .eq("account_id", current.getId()))
-            ) {
-                del++;
-            }
-        }
+    @PreAuthorize("hasAuthority('delete_pass_token')")
+    public Map<String, Object> deletePassToken(@RequestParam List<Integer> tokenIds,
+                                               @RequestAttribute("account") Account current) {
 
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "删除完成");
-        map.put("count", del);
-        map.put("total", ids.length);
+        map.put("count", passTokenService.getBaseMapper().delete(
+                new LambdaQueryWrapper<PassToken>()
+                        .eq(PassToken::getAccountId, current.getId())
+                        .in(PassToken::getId, tokenIds)
+        ));
+        map.put("total", tokenIds.size());
         return map;
     }
 
     @PutMapping
+    @PreAuthorize("hasAuthority('change_pass_token')")
     public Map<String, Object> updatePassToken(PassToken passToken, @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(2);
         map.put("code", 1);
         map.put("msg", "数据错误");
         if (passTokenService.update(passToken,
-                new QueryWrapper<PassToken>()
-                        .like("id", passToken.getId())
-                        .eq("account_id", current.getId()))
+                new LambdaQueryWrapper<PassToken>()
+                        .eq(PassToken::getId, passToken.getId())
+                        .eq(PassToken::getAccountId, current.getId()))
         ) {
             map.put("code", 0);
             map.put("msg", "更新完成");
@@ -105,26 +105,20 @@ public class PassTokenController {
     //仅可以禁用
 
     @PutMapping("lock")
-    public Map<String, Object> lockPassToken(String id, @RequestAttribute("account") Account current) {
-        String[] ids = id.split(",");
-        int del = 0;
-        for (String sp : ids) {
-            List<PassToken> tokenList = passTokenService.list(new QueryWrapper<PassToken>()
-                    .like("id", Integer.parseInt(sp))
-                    .eq("account_id", current.getId()));
-            if (tokenList.size() > 0) {
-                PassToken token = tokenList.get(0);
-                token.setExpireTime(new Date(System.currentTimeMillis() - 1000));
-                if (passTokenService.updateById(token)) {
-                    del++;
-                }
-            }
-        }
+    @PreAuthorize("hasAuthority('change_pass_token')")
+    public Map<String, Object> lockPassToken(@RequestParam List<Integer> tokenIds,
+                                             @RequestAttribute("account") Account current) {
+
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "禁用完成");
-        map.put("count", del);
-        map.put("total", ids.length);
+        map.put("count", passTokenService.getBaseMapper().update(null,
+                new LambdaUpdateWrapper<PassToken>()
+                        .set(PassToken::getExpireTime, new Date(System.currentTimeMillis() - 1000))
+                        .eq(PassToken::getAccountId, current.getId())
+                        .in(PassToken::getId, tokenIds)
+        ));
+        map.put("total", tokenIds.size());
         return map;
     }
 }

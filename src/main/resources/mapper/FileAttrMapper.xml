@@ -15,7 +15,9 @@
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="version" column="version" jdbcType="INTEGER"/>
         <result property="accountId" column="account_id" jdbcType="INTEGER"/>
-        <association property="account" column="account_id"
+        <association property="account"
+                     column="account_id"
+                     fetchType="lazy"
                      select="top.liheji.mapper.AccountMapper.selectById">
         </association>
     </resultMap>

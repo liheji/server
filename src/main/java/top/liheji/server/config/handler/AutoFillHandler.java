@@ -21,6 +21,10 @@ public class AutoFillHandler implements MetaObjectHandler {
      * Account激活状态
      */
     private static final String FIELD_IS_ENABLED = "isEnabled";
+    /**
+     * Account是否管理员
+     */
+    private static final String FIELD_IS_SUPERUSER = "isSuperuser";
 
     /**
      * PersistentDevices使用时间
@@ -54,6 +58,10 @@ public class AutoFillHandler implements MetaObjectHandler {
         Date currentTime = new Date();
         if (metaObject.hasSetter(FIELD_IS_ENABLED)) {
             this.strictInsertFill(metaObject, FIELD_IS_ENABLED, Boolean.class, true);
+        }
+
+        if (metaObject.hasSetter(FIELD_IS_ENABLED)) {
+            this.strictInsertFill(metaObject, FIELD_IS_SUPERUSER, Boolean.class, false);
         }
 
         if (metaObject.hasSetter(FIELD_LAST_USED)) {

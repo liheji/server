@@ -5,13 +5,15 @@ import lombok.Cleanup;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.service.CaptchaService;
-import top.liheji.server.service.FileAttrService;
+import top.liheji.server.pojo.AuthGroup;
+import top.liheji.server.pojo.AuthPermission;
+import top.liheji.server.service.*;
 import top.liheji.server.util.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.util.*;
 
 /**
@@ -32,6 +34,9 @@ import java.util.*;
 @RestController
 public class AfterController {
     @Autowired
+    AccountService accountService;
+
+    @Autowired
     FileAttrService fileAttrService;
 
     @Autowired
@@ -41,25 +46,25 @@ public class AfterController {
      * 代理请求
      * 使用selenium代理客户端请求
      *
-     * @param rM   请求方法
-     * @param req  Request
-     * @param resp Response
+     * @param reqMethod 请求方法
+     * @param req       Request
+     * @param resp      Response
      * @throws Exception 异常
      */
     @GetMapping("proxy/**")
-    public void proxy(@RequestParam(value = "r_m", required = false) String rM,
+    public void proxy(@RequestParam(value = "req_method", required = false) String reqMethod,
                       HttpServletRequest req,
                       HttpServletResponse resp) throws Exception {
 
         final String path = req.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE).toString();
         final String bestMatchingPattern = req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE).toString();
-        String url = "http://" + new AntPathMatcher().extractPathWithinPattern(bestMatchingPattern, path);
+        String url = new AntPathMatcher().extractPathWithinPattern(bestMatchingPattern, path);
         @Cleanup("timeClose") DriverUtils driverUtils = DriverUtils.getInstance();
 
         WebDriver driver = driverUtils.getWebDriver();
-        if ("post".equalsIgnoreCase(rM)) {
-            URL obj = new URL(url);
-            driver.get("http://" + obj.getHost());
+        if ("post".equalsIgnoreCase(reqMethod)) {
+            URI uri = new URI(url);
+            driver.get(uri.getScheme() + "://" + uri.getAuthority());
             ((JavascriptExecutor) driver).executeScript(WebUtils.paramToPostJs(req));
         } else {
             url = String.format("%s?%s", url, WebUtils.paramToGetStr(req));
@@ -119,18 +124,44 @@ public class AfterController {
         map.put("code", 0);
         map.put("msg", "OK");
         map.put("data", CypherUtils.encodeToBase64(JSONObject.toJSONBytes(current)));
-
         return map;
     }
 
-    @GetMapping("secretCaptcha")
-    public Map<String, Object> genSecret(@RequestAttribute("account") Account current,
-                                         @RequestParam(required = false, defaultValue = "false") Boolean type) {
-        Map<String, Object> map = new HashMap<>(4);
+    @GetMapping("permissions")
+    public Map<String, Object> queryPermissions(@RequestAttribute("account") Account current) {
+        Map<String, Object> map = new HashMap<>(3);
 
         map.put("code", 0);
-        map.put("msg", "生成成功");
-        map.put("key", captchaService.genSecret(current, 5 * 60));
+        map.put("msg", "OK");
+
+        List<AuthGroup> groups = null;
+        List<AuthPermission> permissions = null;
+        if (!current.getIsSuperuser()) {
+            groups = current.getAuthGroups();
+            permissions = current.getAuthPermissions();
+        }
+
+        if (groups == null) {
+            groups = new ArrayList<>();
+        }
+        if (permissions == null) {
+            permissions = new ArrayList<>();
+        }
+
+        Set<Object> auths = new HashSet<>();
+        for (AuthGroup group : groups) {
+            List<AuthPermission> permissions0 = group.getAuthPermissions();
+            if (permissions0 != null) {
+                for (AuthPermission permission : permissions0) {
+                    auths.add(permission.getCodename());
+                }
+            }
+        }
+        for (AuthPermission permission : permissions) {
+            auths.add(permission.getCodename());
+        }
+
+        map.put("data", auths);
 
         return map;
     }
@@ -150,8 +181,33 @@ public class AfterController {
         return map;
     }
 
+    @GetMapping("webSocketCaptcha")
+    @PreAuthorize("hasAuthority('use_web_socket')")
+    public Map<String, Object> genWebSocketCaptcha(@RequestAttribute("account") Account current) {
+        Map<String, Object> map = new HashMap<>(3);
+
+        map.put("code", 0);
+        map.put("msg", "密钥生成成功");
+        map.put("key", captchaService.genSecret(current, 5 * 60));
+
+        return map;
+    }
+
+    @GetMapping("registerCaptcha")
+    @PreAuthorize("hasAuthority('add_account')")
+    public Map<String, Object> genRegisterCaptcha(@RequestAttribute("account") Account current) {
+        Map<String, Object> map = new HashMap<>(3);
+
+        map.put("code", 0);
+        map.put("msg", "注册码生成成功");
+        map.put("key", captchaService.genSecret(current, 3 * 24 * 60 * 60));
+
+        return map;
+    }
+
     @PostMapping("format")
     @ResponseBody
+    @PreAuthorize("hasAuthority('use_format')")
     public Map<String, Object> uploadAndFormatFile(@RequestParam("file") MultipartFile file) throws Exception {
         Map<String, Object> map = new HashMap<>(4);
         //处理excel文件

@@ -1,6 +1,6 @@
 package top.liheji.server.config.filter;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.rememberme.InvalidCookieException;
 import org.springframework.stereotype.Component;
@@ -74,7 +74,10 @@ public class ParamSetFilter extends OncePerRequestFilter {
         if (cookieValue != null) {
             String[] strings = decodeCookie(cookieValue);
             if (strings != null) {
-                PersistentLogins logins = persistentLoginsService.getOne(new QueryWrapper<PersistentLogins>().eq("series", strings[0]));
+                PersistentLogins logins = persistentLoginsService.getOne(
+                        new LambdaQueryWrapper<PersistentLogins>()
+                                .eq(PersistentLogins::getSeries, strings[0])
+                );
                 if (logins == null) {
                     request.getSession().invalidate();
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -82,8 +85,8 @@ public class ParamSetFilter extends OncePerRequestFilter {
                 }
 
                 Account account = accountService.getOne(
-                        new QueryWrapper<Account>()
-                                .eq("username", logins.getUsername())
+                        new LambdaQueryWrapper<Account>()
+                                .eq(Account::getUsername, logins.getUsername())
                 );
                 account.setPassword("");
 

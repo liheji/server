@@ -1,4 +1,4 @@
-package top.liheji.server.config.remember.impl;
+package top.liheji.server.config.remember;
 
 /*
  * Copyright 2002-2020 the original author or authors.
@@ -45,9 +45,9 @@ import org.springframework.security.web.authentication.rememberme.InvalidCookieE
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationException;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import top.liheji.server.mapper.AccountMapper;
-import top.liheji.server.mapper.PassTokenMapper;
 import top.liheji.server.pojo.PassToken;
+import top.liheji.server.service.AccountService;
+import top.liheji.server.service.PassTokenService;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -75,10 +75,10 @@ import java.util.Map;
 public abstract class CustomAbstractRememberMeServices implements RememberMeServices, InitializingBean, LogoutHandler, MessageSourceAware {
 
     @Autowired
-    protected AccountMapper accountMapper;
+    protected AccountService accountService;
 
     @Autowired
-    protected PassTokenMapper passTokenMapper;
+    protected PassTokenService passTokenService;
 
     public static final String SPRING_SECURITY_REMEMBER_ME_COOKIE_KEY = "sessionid";
 
@@ -139,7 +139,7 @@ public abstract class CustomAbstractRememberMeServices implements RememberMeServ
     public final Authentication autoLogin(HttpServletRequest request, HttpServletResponse response) {
         String tid = request.getParameter("token");
         if (tid != null && !"".equals(tid.trim())) {
-            PassToken passToken = passTokenMapper.selectTokenByKey(tid);
+            PassToken passToken = passTokenService.selectTokenByKey(tid);
             if (passToken != null && (passToken.getExpireTime().getTime() == 0 || passToken.getExpireTime().getTime() > System.currentTimeMillis())) {
                 if (passToken.getAccount().getIsEnabled()) {
                     //权限

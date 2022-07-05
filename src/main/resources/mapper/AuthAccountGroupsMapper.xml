@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="top.liheji.server.mapper.AuthAccountGroupsMapper">
+
+    <cache-ref namespace="top.liheji.server.mapper.AuthAccountGroupsMapper"/>
+
+    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthAccountGroups">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="accountId" column="account_id" jdbcType="INTEGER"/>
+        <result property="groupId" column="group_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,account_id,group_id
+    </sql>
+
+    <select id="selectGroupByAccountId" resultType="top.liheji.server.pojo.AuthGroup">
+        SELECT *
+        FROM auth_group
+        WHERE id in (
+            SELECT group_id
+            FROM auth_account_groups
+            WHERE account_id = #{accountId}
+        )
+    </select>
+
+    <select id="selectAccountByGroupId" resultType="top.liheji.server.pojo.Account">
+        SELECT *
+        FROM server_account
+        WHERE id in (
+            SELECT account_id
+            FROM auth_account_groups
+            WHERE group_id = #{groupId}
+        )
+    </select>
+</mapper>

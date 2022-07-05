@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="top.liheji.server.mapper.AuthAccountPermissionsMapper">
+
+    <cache-ref namespace="top.liheji.server.mapper.AuthAccountPermissionsMapper"/>
+
+    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthAccountPermissions">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="accountId" column="account_id" jdbcType="INTEGER"/>
+        <result property="permissionId" column="permission_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,account_id,permission_id
+    </sql>
+
+    <select id="selectPermissionByAccountId" resultType="top.liheji.server.pojo.AuthPermission">
+        SELECT *
+        FROM auth_permission
+        WHERE id in (
+            SELECT permission_id
+            FROM auth_account_permissions
+            WHERE account_id = #{accountId}
+        )
+    </select>
+
+    <select id="selectAccountByPermissionId" resultType="top.liheji.server.pojo.Account">
+        SELECT *
+        FROM server_account
+        WHERE id in (
+            SELECT account_id
+            FROM auth_account_permissions
+            WHERE permission_id = #{permissionId}
+        )
+    </select>
+</mapper>
