@@ -1,6 +1,6 @@
 package top.liheji.server.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
@@ -34,7 +34,8 @@ public class DeviceController {
                                            @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         List<PersistentDevices> devicesList = persistentDevicesService.list(
-                new QueryWrapper<PersistentDevices>().eq("username", current.getUsername())
+                new LambdaQueryWrapper<PersistentDevices>()
+                        .eq(PersistentDevices::getUsername, current.getUsername())
         );
         for (PersistentDevices devices : devicesList) {
             devices.setOther(series);
@@ -48,14 +49,14 @@ public class DeviceController {
     }
 
     @PutMapping
-    public Map<String, Object> updateDevice(String tp,
+    public Map<String, Object> changeDevice(String tp,
                                             HttpSession session,
                                             @RequestAttribute("series") String series,
                                             @RequestAttribute("account") Account current) {
         PersistentDevices persistentDevices = persistentDevicesService.getOne(
-                new QueryWrapper<PersistentDevices>()
-                        .eq("type", tp)
-                        .eq("username", current.getUsername())
+                new LambdaQueryWrapper<PersistentDevices>()
+                        .eq(PersistentDevices::getType, tp)
+                        .eq(PersistentDevices::getUsername, current.getUsername())
         );
 
         Map<String, Object> map = new HashMap<>(4);
@@ -68,9 +69,9 @@ public class DeviceController {
             persistentDevices.setSeries("");
             persistentDevicesService.update(
                     persistentDevices,
-                    new QueryWrapper<PersistentDevices>()
-                            .eq("type", tp)
-                            .eq("username", current.getUsername())
+                    new LambdaQueryWrapper<PersistentDevices>()
+                            .eq(PersistentDevices::getType, tp)
+                            .eq(PersistentDevices::getUsername, current.getUsername())
             );
 
             map.put("code", 0);

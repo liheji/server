@@ -1,16 +1,18 @@
 package top.liheji.server.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.service.AccountService;
-import top.liheji.server.service.CaptchaService;
+import top.liheji.server.pojo.AuthGroup;
+import top.liheji.server.pojo.AuthPermission;
+import top.liheji.server.service.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author : Galaxy
@@ -19,6 +21,7 @@ import java.util.Map;
  * @project : serverPlus
  * @description : 实现用户操作相关功能接口
  */
+@Slf4j
 @RestController
 @RequestMapping("/account")
 public class AccountController {
@@ -28,47 +31,60 @@ public class AccountController {
     @Autowired
     private AccountService accountService;
 
+    @Autowired
+    AuthGroupService authGroupService;
+
+    @Autowired
+    AuthPermissionService authPermissionService;
+
+    @Autowired
+    AuthAccountGroupsService authAccountGroupsService;
+
     /**
      * 自己更新信息使用
      */
     @PutMapping("personal")
-    public Map<String, Object> updateAccountPersonal(Account account,
-                                                     @RequestParam(required = false) String key,
-                                                     @RequestParam(required = false) String newPassword,
-                                                     @RequestAttribute("account") Account current) {
+    public Map<String, Object> changePersonal(Account account,
+                                              String captcha,
+                                              String type,
+                                              @RequestParam(required = false) String newPassword,
+                                              @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(2);
-
-        //重新查询密码
-        current = accountService.getById(current.getId());
+        map.put("code", 1);
+        // 设置ID
         account.setId(current.getId());
-        account.setIsEnabled(null);
-        account.clearOthers();
+        account.clearOther();
 
         boolean execute = true;
-        if (account.notMatchEmail()) {
-            map.put("msg", "邮箱格式错误");
-            execute = false;
-        }
+        switch (type) {
+            case "password":
+                account.setMobile(null);
+                account.setEmail(null);
 
-
-        if (account.getEmail() != null && !captchaService.checkCaptcha(key)) {
-            map.put("msg", "校验码错误");
-            execute = false;
-        }
-
-        if (account.notMatchMobile()) {
-            map.put("msg", "手机号格式错误");
-            execute = false;
-        }
-
-        if (account.getPassword() != null) {
-            if (account.matchPassword(current.getPassword())) {
-                account.setPassword(newPassword);
-                account.bcryptPassword();
-            } else {
-                map.put("msg", "密码错误");
-                execute = false;
-            }
+                //重新查询密码h
+                Account temp = accountService.getById(current.getId());
+                if (account.matchPassword(temp.getPassword())) {
+                    account.setPassword(newPassword);
+                    account.bcryptPassword();
+                } else {
+                    map.put("msg", "密码错误");
+                    execute = false;
+                }
+                break;
+            case "email":
+                account.setPassword(null);
+                account.setMobile(null);
+                if (!captchaService.checkCaptcha(captcha)) {
+                    map.put("msg", "校验码错误");
+                    execute = false;
+                }
+                break;
+            case "mobile":
+                account.setPassword(null);
+                account.setEmail(null);
+                break;
+            default:
+                throw new RuntimeException("所选类型不存在");
         }
 
         if (execute && accountService.updateById(account)) {
@@ -79,28 +95,22 @@ public class AccountController {
         return map;
     }
 
-
     @GetMapping
+    @PreAuthorize("hasAuthority('view_account')")
     public Map<String, Object> queryAccount(Integer page, Integer limit,
-                                            @RequestParam(required = false, defaultValue = "") String username,
-                                            @RequestParam(required = false, defaultValue = "") Boolean isEnabled,
-                                            @RequestAttribute("account") Account current) {
-
+                                            @RequestParam(required = false) Boolean isEnabled,
+                                            @RequestParam(required = false, defaultValue = "") String username) {
         Map<String, Object> map = new HashMap<>(5);
 
-        QueryWrapper<Account> wrapper = new QueryWrapper<Account>()
-                .like("username", username)
-                .ne("username", current.getUsername())
-                .ne("username", "admin");
-
+        LambdaQueryWrapper<Account> wrapper =
+                new LambdaQueryWrapper<Account>()
+                        .like(Account::getUsername, username);
         if (isEnabled != null) {
-            wrapper = wrapper.eq("is_enabled", isEnabled);
+            wrapper = wrapper.eq(Account::getIsEnabled, isEnabled);
         }
-
         Page<Account> accountPage = accountService.page(new Page<>(page, limit), wrapper);
 
         List<Account> accountList = accountPage.getRecords();
-
         map.put("code", 0);
         map.put("msg", "查询成功");
         map.put("count", accountList.size());
@@ -110,35 +120,85 @@ public class AccountController {
         return map;
     }
 
+    @GetMapping("permissions")
+    @PreAuthorize("hasAuthority('change_account')")
+    public Map<String, Object> queryPermissions(String accountId) {
+        Map<String, Object> map = new HashMap<>(3);
+
+        map.put("code", 0);
+        map.put("msg", "OK");
+        Account account = accountService.getById(accountId);
+
+        List<AuthGroup> groups = null;
+        List<AuthPermission> permissions = null;
+
+        if (account != null) {
+            if (!account.getIsSuperuser()) {
+                groups = account.getAuthGroups();
+                permissions = account.getAuthPermissions();
+            }
+        }
+
+        if (permissions == null) {
+            permissions = new ArrayList<>();
+        }
+        if (groups == null) {
+            groups = new ArrayList<>();
+        }
+
+        // 已授权的权限
+        Set<Object> auths = new HashSet<>();
+        // 已拥有的分组
+        Set<Object> packets = new HashSet<>();
+        // 分组权限对应map
+        for (AuthGroup group : groups) {
+            packets.add(group.getId());
+            List<AuthPermission> permissions0 = group.getAuthPermissions();
+            if (permissions0 != null) {
+                for (AuthPermission permission : permissions0) {
+                    auths.add(permission.getId());
+                }
+            }
+        }
+        for (AuthPermission permission : permissions) {
+            auths.add(permission.getId());
+        }
+
+        Map<String, Object> data = new HashMap<>(2);
+        data.put("groupIds", packets);
+        data.put("permissionIds", auths);
+        map.put("data", data);
+
+        Map<String, Object> total = new HashMap<>(2);
+        total.put("groups", authGroupService.list());
+        total.put("permissions", authPermissionService.list());
+        map.put("total", total);
+
+        return map;
+    }
+
     @PutMapping
-    public Map<String, Object> updateAccount(Account account, @RequestAttribute("account") Account current) {
+    @PreAuthorize("hasAuthority('change_account')")
+    public Map<String, Object> changeAccount(Account account,
+                                             @RequestParam(required = false) List<Integer> groupIds,
+                                             @RequestParam(required = false) List<Integer> permissionIds,
+                                             @RequestParam(required = false, defaultValue = "false") Boolean resetPassword) {
         Map<String, Object> map = new HashMap<>(2);
+        map.put("code", 1);
+        map.put("msg", "修改失败");
 
-        //重新查询密码
+        // 删除其他数据
         account.setPassword(null);
-        account.clearOthers();
+        account.clearOtherExcludeBoolean();
 
-        boolean execute = true;
-        if (!account.equals(current) && "admin".equals(account.getUsername())) {
-            map.put("msg", "非法操作");
-            execute = false;
+        if (resetPassword) {
+            account.setPassword("12345");
+            account.bcryptPassword();
         }
 
-        if (account.notMatchEmail()) {
-            map.put("msg", "邮箱格式错误");
-            execute = false;
-        }
-
-        if (account.notMatchMobile()) {
-            map.put("msg", "手机号格式错误");
-            execute = false;
-        }
-
-        if (execute && accountService.update(account,
-                new QueryWrapper<Account>()
-                        .eq("id", account.getId())
-                        .ne("username", current.getUsername()))
-        ) {
+        if (accountService.updateById(account) &&
+                account.saveBatchGroup(groupIds) &&
+                account.saveBatchPermission(permissionIds)) {
             map.put("code", 0);
             map.put("msg", "修改成功");
         }
@@ -146,25 +206,18 @@ public class AccountController {
         return map;
     }
 
-    @PutMapping("enable")
-    public Map<String, Object> lockAccount(String id) {
-        String[] ids = id.split(",");
-        int del = 0;
-        for (String sp : ids) {
-            Account cur = accountService.getById(Integer.parseInt(sp));
-            if ("admin".equals(cur.getUsername())) {
-                continue;
-            }
-            cur.setIsEnabled(!cur.getIsEnabled());
-            if (accountService.updateById(cur)) {
-                del++;
-            }
-        }
+    @PutMapping("status")
+    @PreAuthorize("hasAuthority('delete_account')")
+    public Map<String, Object> deleteAccount(@RequestParam List<Integer> accountIds) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "操作完成");
-        map.put("count", del);
-        map.put("total", ids.length);
+        map.put("count", accountService.getBaseMapper().update(null,
+                new LambdaUpdateWrapper<Account>()
+                        .setSql("is_enabled = !is_enabled")
+                        .in(Account::getId, accountIds)
+        ));
+        map.put("total", accountIds.size());
         return map;
     }
 }

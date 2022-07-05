@@ -1,14 +1,21 @@
 package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import top.liheji.server.service.AuthAccountGroupsService;
+import top.liheji.server.service.AuthAccountPermissionsService;
+import top.liheji.server.util.SpringBeanUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 /**
  * 系统用户实体
@@ -19,8 +26,6 @@ import java.util.regex.Pattern;
 @Data
 @TableName(value = "server_account")
 public class Account implements Serializable {
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w\\-]+@[a-z0-9-]+(\\.[a-z0-9-]+)*(\\.[a-z]{2,})$");
-    private static final Pattern MOBILE_PATTERN = Pattern.compile("^((\\+86)|(86))?1\\d{10}$");
     private static final PasswordEncoder ENCODER = new BCryptPasswordEncoder();
 
     /**
@@ -40,6 +45,9 @@ public class Account implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private Boolean isEnabled;
 
+    @TableField(fill = FieldFill.INSERT)
+    private Boolean isSuperuser;
+
     private Date lastLogin;
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
@@ -56,7 +64,15 @@ public class Account implements Serializable {
      * 非数据库字段
      */
     @TableField(exist = false)
-    private static final long serialVersionUID = 3386845044188835258L;
+    @JsonIgnore
+    private List<AuthGroup> authGroups;
+
+    @TableField(exist = false)
+    @JsonIgnore
+    private List<AuthPermission> authPermissions;
+
+    @TableField(exist = false)
+    private static final long serialVersionUID = -3386845044188835258L;
 
     /**
      * 自定义方法
@@ -74,6 +90,52 @@ public class Account implements Serializable {
         this.lastLogin = lastLogin;
     }
 
+    public List<AuthGroup> getAuthGroups() {
+        if (this.authGroups == null && this.id != null) {
+            this.authGroups = SpringBeanUtils.getBean(AuthAccountGroupsService.class).selectGroupByAccountId(this.id);
+        }
+        return authGroups;
+    }
+
+    public List<AuthPermission> getAuthPermissions() {
+        if (this.authPermissions == null && this.id != null) {
+            this.authPermissions = SpringBeanUtils.getBean(AuthAccountPermissionsService.class).selectPermissionByAccountId(this.id);
+        }
+        return authPermissions;
+    }
+
+    public boolean saveBatchGroup(List<Integer> groupIds) {
+        AuthAccountGroupsService accountGroupsService = SpringBeanUtils.getBean(AuthAccountGroupsService.class);
+        accountGroupsService.remove(
+                new LambdaQueryWrapper<AuthAccountGroups>()
+                        .eq(AuthAccountGroups::getAccountId, this.id)
+        );
+        if (groupIds == null) {
+            return true;
+        }
+        List<AuthAccountGroups> accountGroups = new ArrayList<>();
+        for (Integer groupId : groupIds) {
+            accountGroups.add(new AuthAccountGroups(this.id, groupId));
+        }
+        return accountGroupsService.saveBatch(accountGroups);
+    }
+
+    public boolean saveBatchPermission(List<Integer> permissionIds) {
+        AuthAccountPermissionsService accountPermissionsService = SpringBeanUtils.getBean(AuthAccountPermissionsService.class);
+        accountPermissionsService.remove(
+                new LambdaQueryWrapper<AuthAccountPermissions>()
+                        .eq(AuthAccountPermissions::getAccountId, this.id)
+        );
+        if (permissionIds == null) {
+            return true;
+        }
+        List<AuthAccountPermissions> accountPermissions = new ArrayList<>();
+        for (Integer permissionId : permissionIds) {
+            accountPermissions.add(new AuthAccountPermissions(this.id, permissionId));
+        }
+        return accountPermissionsService.saveBatch(accountPermissions);
+    }
+
     public void bcryptPassword() {
         if (this.password == null || "".equals(this.password.trim())) {
             throw new NullPointerException("密码为空");
@@ -81,25 +143,18 @@ public class Account implements Serializable {
         this.password = new BCryptPasswordEncoder().encode(this.password);
     }
 
-    public void clearOthers() {
+    public void clearOther() {
+        this.isEnabled = null;
+        this.isSuperuser = null;
+        this.clearOtherExcludeBoolean();
+    }
+
+    public void clearOtherExcludeBoolean() {
         this.username = null;
         this.lastLogin = null;
         this.updateTime = null;
         this.createTime = null;
-    }
-
-    public boolean notMatchEmail() {
-        if (this.email == null || "".equals(this.email.trim())) {
-            return false;
-        }
-        return !EMAIL_PATTERN.matcher(this.email.trim()).find();
-    }
-
-    public boolean notMatchMobile() {
-        if (this.mobile == null || "".equals(this.mobile.trim())) {
-            return false;
-        }
-        return !MOBILE_PATTERN.matcher(this.mobile.trim()).find();
+        this.version = null;
     }
 
     public boolean matchPassword(String password) {

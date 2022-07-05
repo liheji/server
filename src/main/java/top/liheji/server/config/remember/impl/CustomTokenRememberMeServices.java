@@ -16,12 +16,12 @@ package top.liheji.server.config.remember.impl;
  * limitations under the License.
  */
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.log.LogMessage;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.*;
 import org.springframework.util.Assert;
 import top.liheji.server.pojo.Account;
@@ -47,10 +47,13 @@ import java.util.Date;
  * 增加记住登录设备功能
  * 使用 MybatisPlus操作数据库
  */
-public class CustomTokenRememberMeServices extends top.liheji.server.config.remember.impl.CustomAbstractRememberMeServices {
-    private final PersistentLoginsService persistentLoginsService;
+public class CustomTokenRememberMeServices extends top.liheji.server.config.remember.CustomAbstractRememberMeServices {
 
-    private final PersistentDevicesService persistentDevicesService;
+    @Autowired
+    private PersistentLoginsService persistentLoginsService;
+
+    @Autowired
+    private PersistentDevicesService persistentDevicesService;
 
     private final SecureRandom random;
 
@@ -62,15 +65,10 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
 
     private int tokenLength = DEFAULT_TOKEN_LENGTH;
 
-    public CustomTokenRememberMeServices(String key,
-                                         UserDetailsService userDetailsService,
-                                         PersistentLoginsService loginsService,
-                                         PersistentDevicesService devicesService) {
+    public CustomTokenRememberMeServices(String key, UserDetailsService userDetailsService) {
         //设置默认参数
         super(key, userDetailsService);
         this.random = new SecureRandom();
-        this.persistentLoginsService = loginsService;
-        this.persistentDevicesService = devicesService;
         super.setAlwaysRemember(true);
     }
 
@@ -107,7 +105,11 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
             // an exception to warn them.
             PersistentDevices devices = new PersistentDevices();
             devices.setSeries("");
-            this.persistentDevicesService.update(devices, new QueryWrapper<PersistentDevices>().eq("series", token.getSeries()));
+            this.persistentDevicesService.update(
+                    devices,
+                    new LambdaQueryWrapper<PersistentDevices>()
+                            .eq(PersistentDevices::getSeries, token.getSeries())
+            );
             this.persistentLoginsService.removeById(token.getSeries());
             throw new CookieTheftException(this.messages.getMessage(
                     "PersistentTokenBasedRememberMeServices.cookieStolen",
@@ -135,9 +137,9 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
                 device.setSeries(newToken.getSeries());
                 device.setLastUsed(new Date());
                 this.persistentDevicesService.update(device,
-                        new QueryWrapper<PersistentDevices>()
-                                .eq("type", device.getType())
-                                .eq("username", device.getUsername())
+                        new LambdaQueryWrapper<PersistentDevices>()
+                                .eq(PersistentDevices::getType, device.getType())
+                                .eq(PersistentDevices::getUsername, device.getUsername())
                 );
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
@@ -180,19 +182,27 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
                 addCookie(persistentToken, request, response);
 
                 this.persistentDevicesService.saveOrUpdate(device,
-                        new QueryWrapper<PersistentDevices>()
-                                .eq("type", device.getType())
-                                .eq("username", username)
+                        new LambdaQueryWrapper<PersistentDevices>()
+                                .eq(PersistentDevices::getType, device.getType())
+                                .eq(PersistentDevices::getUsername, username)
                 );
 
-                this.persistentLoginsService.remove(new QueryWrapper<PersistentLogins>()
-                        .eq("username", username)
-                        .last(String.format("and series not in (select series from persistent_devices where username = '%s')", username))
+                this.persistentLoginsService.remove(
+                        new LambdaQueryWrapper<PersistentLogins>()
+                                .eq(PersistentLogins::getUsername, username)
+                                .notIn(PersistentLogins::getSeries,
+                                        this.persistentDevicesService.listObjs(
+                                                new LambdaQueryWrapper<PersistentDevices>()
+                                                        .select(PersistentDevices::getSeries)
+                                                        .eq(PersistentDevices::getUsername, username)
+                                        )
+                                )
                 );
-                Account cur = accountMapper.selectOne(new QueryWrapper<Account>().eq("username", username));
+
+                Account cur = accountService.getOne(new LambdaQueryWrapper<Account>().eq(Account::getUsername, username));
                 if (cur != null) {
                     cur.setLastLogin(curDate);
-                    accountMapper.updateById(cur);
+                    accountService.updateById(cur);
                     cur.setPassword("");
                     request.setAttribute("account", cur);
                 }
@@ -219,21 +229,31 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
                 emptyDevices.setSeries("");
                 if (token != null) {
                     this.persistentLoginsService.removeById(token.getSeries());
-                    this.persistentDevicesService.update(emptyDevices, new QueryWrapper<PersistentDevices>().eq("series", token.getSeries()));
+                    this.persistentDevicesService.update(
+                            emptyDevices,
+                            new LambdaQueryWrapper<PersistentDevices>()
+                                    .eq(PersistentDevices::getSeries, token.getSeries())
+                    );
                 }
 
                 PersistentDevices device = WebUtils.parseAgent(request);
                 if (device != null) {
                     this.persistentDevicesService.update(emptyDevices,
-                            new QueryWrapper<PersistentDevices>()
-                                    .eq("type", device.getType())
-                                    .eq("username", authentication.getName())
+                            new LambdaQueryWrapper<PersistentDevices>()
+                                    .eq(PersistentDevices::getType, device.getType())
+                                    .eq(PersistentDevices::getUsername, authentication.getName())
                     );
                 }
 
-                this.persistentLoginsService.remove(new QueryWrapper<PersistentLogins>()
-                        .eq("username", authentication.getName())
-                        .last(String.format("and series not in (select series from persistent_devices where username = %s)", authentication.getName()))
+                this.persistentLoginsService.remove(new LambdaQueryWrapper<PersistentLogins>()
+                        .eq(PersistentLogins::getUsername, authentication.getName())
+                        .notIn(PersistentLogins::getSeries,
+                                this.persistentDevicesService.listObjs(
+                                        new LambdaQueryWrapper<PersistentDevices>()
+                                                .select(PersistentDevices::getSeries)
+                                                .eq(PersistentDevices::getUsername, authentication.getName())
+                                )
+                        )
                 );
             } catch (Exception ignored) {
             }

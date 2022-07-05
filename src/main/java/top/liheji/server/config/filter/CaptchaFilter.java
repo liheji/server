@@ -117,6 +117,6 @@ public class CaptchaFilter extends OncePerRequestFilter {
     }
 
     public boolean otherRequireCaptcha(HttpServletRequest request) {
-        return request.getParameter("newPassword") != null;
+        return "password".equals(request.getParameter("type"));
     }
 }

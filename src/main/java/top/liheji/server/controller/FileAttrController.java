@@ -1,15 +1,15 @@
 package top.liheji.server.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.Cleanup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.FileAttr;
 import top.liheji.server.service.FileAttrService;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import top.liheji.server.util.AsposeUtil;
 import top.liheji.server.util.FileUtils;
 
@@ -38,14 +38,15 @@ public class FileAttrController {
     private static final Pattern R = Pattern.compile("bytes=(\\d*)-(\\d*)");
 
     @GetMapping
+    @PreAuthorize("hasAuthority('view_file_attr')")
     public Map<String, Object> queryFileAttr(Integer page, Integer limit,
                                              @RequestAttribute("account") Account current,
                                              @RequestParam(required = false, defaultValue = "") String fileName) {
         Page<FileAttr> fileAttrPage = fileAttrService.page(
                 new Page<>(page, limit),
-                new QueryWrapper<FileAttr>()
-                        .like("file_name", fileName)
-                        .eq("account_id", current.getId())
+                new LambdaQueryWrapper<FileAttr>()
+                        .like(FileAttr::getFileName, fileName)
+                        .eq(FileAttr::getAccountId, current.getId())
         );
         List<FileAttr> dataList = fileAttrPage.getRecords();
         Map<String, Object> map = new HashMap<>(5);
@@ -58,33 +59,24 @@ public class FileAttrController {
     }
 
     @DeleteMapping
-    public Map<String, Object> deleteFileAttr(String id, @RequestAttribute("account") Account current) {
-        String[] ids = id.split(",");
-        int del = 0;
-        for (String sp : ids) {
-            Integer idd = Integer.parseInt(sp);
-            FileAttr attr = fileAttrService.getById(idd);
-            File file = FileUtils.resourceFile("files", attr.getFileName());
-            if (
-                    fileAttrService.remove(new QueryWrapper<FileAttr>()
-                            .eq("id", idd)
-                            .eq("account_id", current.getId()))
-            ) {
-                file.deleteOnExit();
-                del++;
-            }
-        }
+    @PreAuthorize("hasAuthority('delete_file_attr')")
+    public Map<String, Object> deleteFileAttr(@RequestParam List<Integer> fileIds, @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "删除完成");
-        map.put("count", del);
-        map.put("total", ids.length);
+        map.put("count", fileAttrService.getBaseMapper().delete(
+                new LambdaQueryWrapper<FileAttr>()
+                        .eq(FileAttr::getAccountId, current.getId())
+                        .in(FileAttr::getId, fileIds)
+        ));
+        map.put("total", fileIds.size());
         return map;
     }
 
     @PostMapping
-    public Map<String, Object> insertFileAttr(@RequestParam("file") MultipartFile[] file,
-                                              @RequestAttribute("account") Account current) throws Exception {
+    @PreAuthorize("hasAuthority('add_file_attr')")
+    public Map<String, Object> addFileAttr(@RequestParam("file") MultipartFile[] file,
+                                           @RequestAttribute("account") Account current) throws Exception {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "上传成功");
@@ -98,9 +90,9 @@ public class FileAttrController {
         for (FileAttr fileAttr : fileAttrs) {
             fileAttr.setAccountId(current.getId());
             List<FileAttr> infoNew = fileAttrService.list(
-                    new QueryWrapper<FileAttr>()
-                            .eq("file_size", fileAttr.getFileSize())
-                            .eq("file_hash", fileAttr.getFileHash())
+                    new LambdaQueryWrapper<FileAttr>()
+                            .eq(FileAttr::getFileSize, fileAttr.getFileSize())
+                            .eq(FileAttr::getFileHash, fileAttr.getFileHash())
             );
             if (infoNew.size() > 0) {
                 boolean flag = false;
@@ -136,15 +128,16 @@ public class FileAttrController {
     }
 
     @GetMapping("download")
+    @PreAuthorize("hasAuthority('download_file_attr')")
     public void downloadFile(@RequestParam(defaultValue = "") String param,
                              @RequestHeader(value = "Range", defaultValue = "") String rang,
                              @RequestAttribute("account") Account current,
                              HttpServletResponse resp) throws IOException {
 
         if (param.matches("^\\d+$")) {
-            Wrapper<FileAttr> wrapper = new QueryWrapper<FileAttr>()
-                    .eq("id", Integer.parseInt(param))
-                    .eq("account_id", current.getId());
+            LambdaQueryWrapper<FileAttr> wrapper = new LambdaQueryWrapper<FileAttr>()
+                    .eq(FileAttr::getId, Integer.parseInt(param))
+                    .eq(FileAttr::getAccountId, current.getId());
 
             List<FileAttr> fileAttrList = fileAttrService.list(wrapper);
             if (fileAttrList.size() <= 0) {
@@ -210,15 +203,16 @@ public class FileAttrController {
     }
 
     @GetMapping("preview/{param:.+}")
+    @PreAuthorize("hasAuthority('download_file_attr')")
     public void previewFile(@PathVariable String param,
                             @RequestAttribute("account") Account current,
                             HttpServletResponse resp) throws Exception {
         param = param == null ? "" : param;
 
         if (param.matches("^\\d+$")) {
-            Wrapper<FileAttr> wrapper = new QueryWrapper<FileAttr>()
-                    .eq("id", Integer.parseInt(param))
-                    .eq("account_id", current.getId());
+            LambdaQueryWrapper<FileAttr> wrapper = new LambdaQueryWrapper<FileAttr>()
+                    .eq(FileAttr::getId, Integer.parseInt(param))
+                    .eq(FileAttr::getAccountId, current.getId());
 
             List<FileAttr> fileAttrList = fileAttrService.list(wrapper);
             if (fileAttrList.size() <= 0) {

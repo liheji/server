@@ -19,8 +19,6 @@ import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
 import top.liheji.server.config.remember.impl.CustomTokenRememberMeServices;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.service.PersistentDevicesService;
-import top.liheji.server.service.PersistentLoginsService;
 import top.liheji.server.util.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
@@ -55,13 +53,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private UserDetailsService userDetailsService;
-
-    @Autowired
-    private PersistentLoginsService persistentLoginsService;
-
-    @Autowired
-    private PersistentDevicesService persistentDevicesService;
-
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -187,6 +178,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Bean
     public CustomTokenRememberMeServices rememberMeServices() {
-        return new CustomTokenRememberMeServices(rememberKey, userDetailsService, persistentLoginsService, persistentDevicesService);
+        return new CustomTokenRememberMeServices(rememberKey, userDetailsService);
     }
 }
