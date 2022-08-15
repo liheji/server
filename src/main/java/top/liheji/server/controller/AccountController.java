@@ -2,6 +2,7 @@ package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,50 +45,36 @@ public class AccountController {
      * 自己更新信息使用
      */
     @PutMapping("personal")
-    public Map<String, Object> changePersonal(Account account,
-                                              String captcha,
-                                              String type,
+    public Map<String, Object> changePersonal(String property,
+                                              String value,
                                               @RequestParam(required = false) String newPassword,
                                               @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(2);
         map.put("code", 1);
-        // 设置ID
-        account.setId(current.getId());
-        account.clearOther();
-
         boolean execute = true;
-        switch (type) {
+        switch (property) {
             case "password":
-                account.setMobile(null);
-                account.setEmail(null);
-
                 //重新查询密码h
-                Account temp = accountService.getById(current.getId());
-                if (account.matchPassword(temp.getPassword())) {
-                    account.setPassword(newPassword);
-                    account.bcryptPassword();
+                current = accountService.getById(current.getId());
+                if (current.matchPassword(value)) {
+                    value = Account.bcryptPassword(newPassword);
                 } else {
                     map.put("msg", "密码错误");
                     execute = false;
                 }
                 break;
             case "email":
-                account.setPassword(null);
-                account.setMobile(null);
-                if (!captchaService.checkCaptcha(captcha)) {
-                    map.put("msg", "校验码错误");
-                    execute = false;
-                }
-                break;
             case "mobile":
-                account.setPassword(null);
-                account.setEmail(null);
                 break;
             default:
                 throw new RuntimeException("所选类型不存在");
         }
 
-        if (execute && accountService.updateById(account)) {
+        if (execute && accountService.update(
+                new UpdateWrapper<Account>()
+                        .eq("id", current.getId())
+                        .set(property, value)
+        )) {
             map.put("code", 0);
             map.put("msg", "修改成功");
         }

@@ -33,8 +33,6 @@ public class WebUtils {
             "WL-Proxy-Client-IP",
             "HTTP_CLIENT_IP",
             "HTTP_X_FORWARDED_FOR",
-            "Proxy-Client-IP",
-            "Proxy-Client-IP",
             "X-Real-IP"
     };
 

@@ -10,9 +10,6 @@ import top.liheji.server.pojo.FileAttr;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Stack;
 
@@ -207,19 +204,11 @@ public class FileUtils {
      * @param file 文件
      * @return 文件的 MimeType
      */
-    public static String fileMimeType(File file) {
-        String contentType = "";
-        Path path = Paths.get(file.getAbsolutePath());
-        try {
-            contentType = Files.probeContentType(path);
-        } catch (IOException e) {
-            log.warn(e.toString());
-        } finally {
-            if ("".equals(contentType)) {
-                contentType = fileType(file);
-            }
+    public static String guessMediaType(File file) {
+        String contentType = MediaType.guessMediaType(file.getName());
+        if ("application/octet-stream".equals(contentType)) {
+            contentType = magicGuessFileMediaType(file);
         }
-
         return contentType;
     }
 
@@ -229,7 +218,7 @@ public class FileUtils {
      * @param file 文件
      * @return 文件的 MimeType
      */
-    private static String fileType(File file) {
+    private static String magicGuessFileMediaType(File file) {
         String contentType = "";
         try {
             MagicMatch match = Magic.getMagicMatch(file, false);
@@ -250,7 +239,7 @@ public class FileUtils {
      * @param filePath 文件路径
      * @return 文件文件名和后缀
      */
-    private static String[] splitText(String filePath) {
+    public static String[] splitText(String filePath) {
         return splitText(new File(filePath));
     }
 

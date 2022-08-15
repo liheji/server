@@ -69,7 +69,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // 路径拦截设置
         http.authorizeRequests()
-                .antMatchers("/login", "/before/**")
+                .antMatchers("/before/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated();
@@ -146,7 +146,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // 跨域攻击拦截
         http.csrf()
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringAntMatchers("/before/cdn");
 
         // 未登录以及登录认证设置
         http.exceptionHandling()

@@ -2,7 +2,6 @@ package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -143,12 +142,6 @@ public class Account implements Serializable {
         this.password = new BCryptPasswordEncoder().encode(this.password);
     }
 
-    public void clearOther() {
-        this.isEnabled = null;
-        this.isSuperuser = null;
-        this.clearOtherExcludeBoolean();
-    }
-
     public void clearOtherExcludeBoolean() {
         this.username = null;
         this.lastLogin = null;
@@ -158,7 +151,7 @@ public class Account implements Serializable {
     }
 
     public boolean matchPassword(String password) {
-        return this.password != null && ENCODER.matches(this.password, password);
+        return this.password != null && ENCODER.matches(password, this.password);
     }
 
     @Override
@@ -171,5 +164,9 @@ public class Account implements Serializable {
         }
         Account account = (Account) o;
         return Objects.equals(username, account.username);
+    }
+
+    public static String bcryptPassword(String password) {
+        return new BCryptPasswordEncoder().encode(password);
     }
 }

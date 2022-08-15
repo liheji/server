@@ -2,6 +2,8 @@ package top.liheji.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,9 @@ import top.liheji.server.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -31,6 +32,7 @@ import java.util.*;
  * @project : serverPlus
  * @description : 实现用户登录前访问相关接口
  */
+@Slf4j
 @RestController
 public class AfterController {
     @Autowired
@@ -90,33 +92,6 @@ public class AfterController {
         return map;
     }
 
-    @PostMapping("discern")
-    public Map<String, Object> discern(String frontImg, String bgImg, String discernType) throws IOException {
-        File frontIn = FileUtils.base64SaveToFile(frontImg);
-        File bgIn = FileUtils.base64SaveToFile(bgImg);
-        Map<String, Object> map = new HashMap<>(2);
-        map.put("code", 0);
-        map.put("msg", "识别成功");
-        SlideUtils side = SlideUtils.getInstance();
-        switch (discernType) {
-            case "slide":
-                map.put("data", side.discernSlideImg(frontIn.getPath(), bgIn.getPath()));
-                break;
-            case "gap":
-                map.put("data", side.discernGapImg(frontIn.getPath(), bgIn.getPath()));
-                break;
-            default:
-                map.put("code", 1);
-                map.put("msg", "不支持的类型");
-                break;
-        }
-
-        frontIn.deleteOnExit();
-        bgIn.deleteOnExit();
-
-        return map;
-    }
-
     @GetMapping("status")
     public Map<String, Object> status(@RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);
@@ -166,16 +141,38 @@ public class AfterController {
         return map;
     }
 
-    @GetMapping("emailCaptcha")
-    public Map<String, Object> bindCaptcha(String receiver, @RequestAttribute("account") Account current) {
+    @GetMapping("sendCaptcha")
+    public Map<String, Object> sendCaptcha(String receiver, String property, @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 1);
         map.put("msg", "用户不存在");
 
         if (current != null) {
-            captchaService.sendEmailCaptcha(receiver);
-            map.put("code", 0);
-            map.put("msg", "发送成功");
+            switch (property) {
+                case "email":
+                    if (receiver.equals(current.getEmail())) {
+                        captchaService.sendEmailCaptcha(receiver);
+                        map.put("code", 0);
+                        map.put("msg", "发送成功");
+                    } else {
+                        map.put("code", 1);
+                        map.put("msg", "验证失败");
+                    }
+                    break;
+                case "mobile":
+                    if (receiver.equals(current.getMobile())) {
+                        // 发送手机验证码
+                        //  captchaService.sendMobileCaptcha(receiver);
+                        map.put("code", 1);
+                        map.put("msg", "暂不支持手机号验证");
+                    } else {
+                        map.put("code", 1);
+                        map.put("msg", "验证失败");
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("所选类型不存在");
+            }
         }
 
         return map;
@@ -223,6 +220,33 @@ public class AfterController {
             map.put("code", 0);
             map.put("msg", "格式化完成");
             map.put("fileName", genFile.getName());
+        }
+
+        return map;
+    }
+
+    @PostMapping("upload")
+    @ResponseBody
+    public Map<String, Object> uploadToBlog(@RequestParam("file") MultipartFile[] files,
+                                            String prefix) throws Exception {
+        Map<String, Object> map = new HashMap<>(2);
+        map.put("code", 0);
+        map.put("msg", "上传成功");
+        String[] items = new String[]{""};
+        if (prefix != null) {
+            items = prefix.split("[/\\\\]+");
+        }
+        File baseFile = Paths.get("/usr/local/blog/source/_posts", items).toFile();
+        if (!baseFile.exists()) {
+            baseFile.mkdirs();
+        }
+        //上传文件
+        for (MultipartFile file : files) {
+            String fileName = file.getOriginalFilename();
+            assert fileName != null;
+            @Cleanup InputStream in = file.getInputStream();
+            @Cleanup OutputStream out = new FileOutputStream(new File(baseFile, fileName));
+            IOUtils.copy(in, out);
         }
 
         return map;

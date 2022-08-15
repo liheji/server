@@ -32,7 +32,7 @@ import org.springframework.security.authentication.RememberMeAuthenticationToken
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
-import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
 import org.springframework.security.core.userdetails.*;
@@ -45,9 +45,12 @@ import org.springframework.security.web.authentication.rememberme.InvalidCookieE
 import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationException;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import top.liheji.server.pojo.Account;
+import top.liheji.server.pojo.AuthGroup;
+import top.liheji.server.pojo.AuthPermission;
 import top.liheji.server.pojo.PassToken;
-import top.liheji.server.service.AccountService;
-import top.liheji.server.service.PassTokenService;
+import top.liheji.server.service.*;
+import top.liheji.server.util.SpringBeanUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -57,10 +60,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author : Galaxy
@@ -141,9 +141,43 @@ public abstract class CustomAbstractRememberMeServices implements RememberMeServ
         if (tid != null && !"".equals(tid.trim())) {
             PassToken passToken = passTokenService.selectTokenByKey(tid);
             if (passToken != null && (passToken.getExpireTime().getTime() == 0 || passToken.getExpireTime().getTime() > System.currentTimeMillis())) {
-                if (passToken.getAccount().getIsEnabled()) {
+                Account account = passToken.getAccount();
+                if (account.getIsEnabled()) {
                     //权限
-                    List<GrantedAuthority> authorityList = AuthorityUtils.createAuthorityList("admin");
+                    Set<GrantedAuthority> auths = new HashSet<>();
+
+                    List<AuthGroup> groups = null;
+                    List<AuthPermission> permissions = null;
+
+                    if (account.getIsSuperuser()) {
+                        groups = SpringBeanUtils.getBean(AuthGroupService.class).list();
+                        permissions = SpringBeanUtils.getBean(AuthPermissionService.class).list();
+                    } else {
+                        groups = account.getAuthGroups();
+                        permissions = account.getAuthPermissions();
+                    }
+
+                    if (groups == null) {
+                        groups = new ArrayList<>();
+                    }
+                    if (permissions == null) {
+                        permissions = new ArrayList<>();
+                    }
+
+                    for (AuthGroup group : groups) {
+                        auths.add(new SimpleGrantedAuthority("ROLE_" + group.getCodename()));
+                        List<AuthPermission> permissions0 = group.getAuthPermissions();
+                        if (permissions0 != null) {
+                            for (AuthPermission permission : permissions0) {
+                                auths.add(new SimpleGrantedAuthority(permission.getCodename()));
+                            }
+                        }
+                    }
+
+                    for (AuthPermission permission : permissions) {
+                        auths.add(new SimpleGrantedAuthority(permission.getCodename()));
+                    }
+
                     //创建认证通过Token
                     RememberMeAuthenticationToken token = new RememberMeAuthenticationToken(
                             this.key,
@@ -151,8 +185,8 @@ public abstract class CustomAbstractRememberMeServices implements RememberMeServ
                                     passToken.getAccount().getPassword(),
                                     passToken.getAccount().getIsEnabled(),
                                     true, true, true,
-                                    authorityList),
-                            authorityList
+                                    auths),
+                            auths
                     );
                     token.setDetails(this.authenticationDetailsSource.buildDetails(request));
                     return token;

@@ -1,6 +1,7 @@
 package top.liheji.server.config.filter;
 
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -27,6 +28,7 @@ import java.util.Map;
  * @project : serverPlus
  * @description : 借用用户名密码的过滤器实现验证码功能
  */
+@Slf4j
 @Component
 public class CaptchaFilter extends OncePerRequestFilter {
     @Autowired
@@ -36,8 +38,7 @@ public class CaptchaFilter extends OncePerRequestFilter {
 
     private String[] matchers;
 
-    private static final AntPathRequestMatcher DEFAULT_ANT_PATH_REQUEST_MATCHER = new AntPathRequestMatcher("/login",
-            "POST");
+    private static final AntPathRequestMatcher DEFAULT_ANT_PATH_REQUEST_MATCHER = new AntPathRequestMatcher("/login", "POST");
 
     public CaptchaFilter() {
         setMatchers("/login", "/before/forget", "/before/register");
@@ -71,9 +72,10 @@ public class CaptchaFilter extends OncePerRequestFilter {
     }
 
     public void attemptAuthentication(HttpServletRequest request) throws AuthenticationException {
-        if (!"post".equalsIgnoreCase(request.getMethod()) &&
-                !"put".equalsIgnoreCase(request.getMethod()) &&
-                !"delete".equalsIgnoreCase(request.getMethod())) {
+        String method = request.getMethod();
+        if (!"post".equalsIgnoreCase(method) &&
+                !"put".equalsIgnoreCase(method) &&
+                !"delete".equalsIgnoreCase(method)) {
             throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
         }
 
@@ -117,6 +119,7 @@ public class CaptchaFilter extends OncePerRequestFilter {
     }
 
     public boolean otherRequireCaptcha(HttpServletRequest request) {
-        return "password".equals(request.getParameter("type"));
+        String property = request.getParameter("property");
+        return "email".equals(property) || "password".equals(property);
     }
 }

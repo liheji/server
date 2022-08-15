@@ -43,6 +43,8 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService {
                 new LambdaQueryWrapper<Account>()
                         .eq(Account::getUsername, username)
                         .or()
+                        .eq(Account::getMobile, username)
+                        .or()
                         .eq(Account::getEmail, username)
         );
 

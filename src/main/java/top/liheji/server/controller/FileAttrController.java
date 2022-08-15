@@ -231,7 +231,7 @@ public class FileAttrController {
         }
 
 
-        String contentType = FileUtils.fileMimeType(file);
+        String contentType = FileUtils.guessMediaType(file);
         if (Pattern.matches("^(text|video|audio|image)/.*", contentType) ||
                 Pattern.matches("application/.*(script|json|pdf|xml)", contentType) ||
                 Pattern.matches(".*\\.(doc|xls|ppt)x?$", file.getName())) {

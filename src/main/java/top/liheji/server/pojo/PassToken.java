@@ -1,10 +1,15 @@
 package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import top.liheji.server.service.AccountService;
+import top.liheji.server.service.AuthGroupPermissionsService;
+import top.liheji.server.util.SpringBeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 特殊通行Token
@@ -49,6 +54,7 @@ public class PassToken implements Serializable {
     private Long expireStamp;
 
     @TableField(exist = false)
+    @JsonIgnore
     private Account account;
 
     @TableField(exist = false)
@@ -70,5 +76,12 @@ public class PassToken implements Serializable {
             this.expireStamp = expireStamp;
             this.expireTime = new Date(this.expireStamp);
         }
+    }
+
+    public Account getAccount() {
+        if (this.account == null && this.id != null) {
+            this.account = SpringBeanUtils.getBean(AccountService.class).getById(this.accountId);
+        }
+        return account;
     }
 }

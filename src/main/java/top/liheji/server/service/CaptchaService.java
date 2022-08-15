@@ -10,14 +10,7 @@ import top.liheji.server.pojo.Account;
  * @description : 验证码生成服务
  */
 public interface CaptchaService {
-    /**
-     * 返回验证码
-     *
-     * @param len 验证码长度
-     * @return 验证码
-     */
-    String genCaptcha(int len);
-
+    
     /**
      * 生成图片验证码
      *
@@ -28,6 +21,28 @@ public interface CaptchaService {
      * @throws Exception 异常
      */
     String genImgCaptcha(int len, int width, int height) throws Exception;
+
+    /**
+     * 邮箱发送验证码
+     *
+     * @param receiver 接收者
+     */
+    void sendEmailCaptcha(String receiver);
+
+    /**
+     * 电话发送验证码
+     *
+     * @param receiver 接收者
+     */
+    void sendMobileCaptcha(String receiver);
+
+    /**
+     * 返回验证码
+     *
+     * @param len 验证码长度
+     * @return 验证码
+     */
+    String genCaptcha(int len);
 
     /**
      * 检查验证码
@@ -54,12 +69,4 @@ public interface CaptchaService {
      * @return 检验是否通过
      */
     boolean checkSecret(Account account, String key);
-
-    /**
-     * 邮箱发送验证码
-     *
-     * @param receiver 接收者
-     * @return 验证码
-     */
-    void sendEmailCaptcha(String receiver);
 }
