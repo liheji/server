@@ -5,17 +5,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.service.AccountService;
 import top.liheji.server.service.CaptchaService;
 import top.liheji.server.util.FileUtils;
 import top.liheji.server.util.MediaType;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.*;
@@ -37,20 +34,11 @@ public class BeforeController {
     @Autowired
     private CaptchaService captchaService;
 
-    @Autowired
-    private CaptchaFilter captchaFilter;
-
     @PostMapping("forget")
-    public Map<String, Object> forget(String username, String key, String password, HttpServletRequest request) {
+    public Map<String, Object> forget(String username, String key, String password) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 1);
         map.put("msg", "用户不存在");
-
-        try {
-            captchaFilter.attemptAuthentication(request);
-        } catch (AuthenticationException err) {
-            map.put("msg", err.getMessage());
-        }
 
         Account account = accountService.getOne(
                 new LambdaQueryWrapper<Account>()
@@ -77,16 +65,10 @@ public class BeforeController {
     }
 
     @PostMapping("register")
-    public Map<String, Object> register(Account account, String licence, HttpServletRequest request) {
+    public Map<String, Object> register(Account account, String licence) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 1);
         map.put("msg", "授权码错误");
-
-        try {
-            captchaFilter.attemptAuthentication(request);
-        } catch (AuthenticationException err) {
-            map.put("msg", err.getMessage());
-        }
 
         if (captchaService.checkSecret(null, licence)) {
             account.bcryptPassword();
@@ -158,6 +140,7 @@ public class BeforeController {
                         .or()
                         .eq(Account::getEmail, param)
         );
+
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "OK");

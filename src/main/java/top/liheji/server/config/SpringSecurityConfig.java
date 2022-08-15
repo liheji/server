@@ -43,13 +43,14 @@ import java.util.Map;
 @Configuration
 @EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
+
     private final String rememberKey = StringUtils.genUuid();
 
     @Autowired
-    private ParamSetFilter paramSetFilter;
+    private CaptchaFilter captchaFilter;
 
     @Autowired
-    private CaptchaFilter captchaFilter;
+    private ParamSetFilter paramSetFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -64,15 +65,29 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //验证码过滤器
+        // 只有这些URL需要拦截并识别验证码
+        captchaFilter.setMatchers("/login", "/before/forget", "/before/register");
+        // 特别的需要拦截并识别验证码
+        captchaFilter.setOtherMatcherFunction(request -> {
+            String uri = request.getRequestURI();
+            if (uri.startsWith("/account/personal")) {
+                String property = request.getParameter("property");
+                return "email".equals(property) || "password".equals(property);
+            }
+            return false;
+        });
+
         http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(paramSetFilter, UsernamePasswordAuthenticationFilter.class);
 
+        log.info("过滤器加载完成");
+
         // 路径拦截设置
         http.authorizeRequests()
-                .antMatchers("/before/**")
-                .permitAll()
-                .anyRequest()
-                .authenticated();
+                // 允许直接访问路径
+                .antMatchers("/before/**").permitAll()
+                // 其他路径需要认证（登录）
+                .anyRequest().authenticated();
 
         //登录设置
         http.formLogin()

@@ -27,9 +27,6 @@ import java.util.*;
 @RequestMapping("/account")
 public class AccountController {
     @Autowired
-    private CaptchaService captchaService;
-
-    @Autowired
     private AccountService accountService;
 
     @Autowired
