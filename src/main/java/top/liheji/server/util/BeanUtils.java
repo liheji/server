@@ -18,7 +18,7 @@ import org.springframework.core.ResolvableType;
  */
 @Component
 @NoArgsConstructor
-public class SpringBeanUtils implements ApplicationContextAware {
+public class BeanUtils implements ApplicationContextAware {
     private static ApplicationContext applicationContext = null;
 
     @Override

@@ -39,9 +39,6 @@ public class AfterController {
     AccountService accountService;
 
     @Autowired
-    FileAttrService fileAttrService;
-
-    @Autowired
     private CaptchaService captchaService;
 
     /**
@@ -178,7 +175,7 @@ public class AfterController {
         return map;
     }
 
-    @GetMapping("webSocketCaptcha")
+    @GetMapping("socketCaptcha")
     @PreAuthorize("hasAuthority('use_web_socket')")
     public Map<String, Object> genWebSocketCaptcha(@RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);

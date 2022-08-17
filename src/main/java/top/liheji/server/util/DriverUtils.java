@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class DriverUtils {
     private static DriverUtils driver;
-    private static final String OS = System.getProperty("os.name").toLowerCase();
 
     private WebDriver webDriver;
     private FirefoxOptions firefoxOptions;
@@ -31,10 +30,10 @@ public class DriverUtils {
      */
     private DriverUtils() {
         File file;
-        if (OS.contains("windows")) {
-            file = FileUtils.resourceFile("data", "geckodriver_win.exe");
-        } else if (OS.contains("linux")) {
-            file = new File(ConsoleUtils.SERVER_STATIC_PATH, "geckodriver_linux");
+        if (SystemUtils.isWindows()) {
+            file = FileUtils.resourceFile("drivers", "geckodriver_win.exe");
+        } else if (SystemUtils.isLinux()) {
+            file = FileUtils.resourceFile("drivers", "geckodriver_linux");
         } else {
             throw new RuntimeException("Platform not supported！");
         }

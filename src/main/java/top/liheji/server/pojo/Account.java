@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import top.liheji.server.service.AuthAccountGroupsService;
 import top.liheji.server.service.AuthAccountPermissionsService;
-import top.liheji.server.util.SpringBeanUtils;
+import top.liheji.server.util.BeanUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -91,20 +91,20 @@ public class Account implements Serializable {
 
     public List<AuthGroup> getAuthGroups() {
         if (this.authGroups == null && this.id != null) {
-            this.authGroups = SpringBeanUtils.getBean(AuthAccountGroupsService.class).selectGroupByAccountId(this.id);
+            this.authGroups = BeanUtils.getBean(AuthAccountGroupsService.class).selectGroupByAccountId(this.id);
         }
         return authGroups;
     }
 
     public List<AuthPermission> getAuthPermissions() {
         if (this.authPermissions == null && this.id != null) {
-            this.authPermissions = SpringBeanUtils.getBean(AuthAccountPermissionsService.class).selectPermissionByAccountId(this.id);
+            this.authPermissions = BeanUtils.getBean(AuthAccountPermissionsService.class).selectPermissionByAccountId(this.id);
         }
         return authPermissions;
     }
 
     public boolean saveBatchGroup(List<Integer> groupIds) {
-        AuthAccountGroupsService accountGroupsService = SpringBeanUtils.getBean(AuthAccountGroupsService.class);
+        AuthAccountGroupsService accountGroupsService = BeanUtils.getBean(AuthAccountGroupsService.class);
         accountGroupsService.remove(
                 new LambdaQueryWrapper<AuthAccountGroups>()
                         .eq(AuthAccountGroups::getAccountId, this.id)
@@ -120,7 +120,7 @@ public class Account implements Serializable {
     }
 
     public boolean saveBatchPermission(List<Integer> permissionIds) {
-        AuthAccountPermissionsService accountPermissionsService = SpringBeanUtils.getBean(AuthAccountPermissionsService.class);
+        AuthAccountPermissionsService accountPermissionsService = BeanUtils.getBean(AuthAccountPermissionsService.class);
         accountPermissionsService.remove(
                 new LambdaQueryWrapper<AuthAccountPermissions>()
                         .eq(AuthAccountPermissions::getAccountId, this.id)

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import top.liheji.server.service.AuthGroupPermissionsService;
-import top.liheji.server.util.SpringBeanUtils;
+import top.liheji.server.util.BeanUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -51,7 +51,7 @@ public class AuthPermission implements Serializable {
 
     public List<AuthGroup> getAuthGroups() {
         if (this.authGroups == null && this.id != null) {
-            this.authGroups = SpringBeanUtils.getBean(AuthGroupPermissionsService.class).selectGroupByPermissionId(this.id);
+            this.authGroups = BeanUtils.getBean(AuthGroupPermissionsService.class).selectGroupByPermissionId(this.id);
         }
         return authGroups;
     }

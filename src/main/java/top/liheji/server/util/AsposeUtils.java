@@ -4,6 +4,7 @@ package top.liheji.server.util;
 import com.aspose.cells.Workbook;
 import com.aspose.slides.Presentation;
 import com.aspose.words.Document;
+import com.aspose.words.FontSettings;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
  * @description : Aspose工具类
  */
 @Slf4j
-public class AsposeUtil {
+public class AsposeUtils {
     public static boolean transToPdf(String sourcePath, String pdfPath) {
         try {
             @Cleanup OutputStream out = new FileOutputStream(pdfPath);
@@ -30,6 +31,10 @@ public class AsposeUtil {
     }
 
     public static boolean transToPdf(String sourcePath, OutputStream pdfStream) {
+        if (SystemUtils.isLinux()) {
+            FontSettings.getDefaultInstance().setFontsFolder("/usr/share/fonts/windows", true);
+        }
+
         File file = new File(sourcePath);
         if (!file.exists()) {
             return false;

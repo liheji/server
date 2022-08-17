@@ -2,29 +2,31 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="top.liheji.server.mapper.FileAttrMapper">
+<mapper namespace="top.liheji.server.mapper.UploadInfoMapper">
 
-    <cache-ref namespace="top.liheji.server.mapper.FileAttrMapper"/>
+    <cache-ref namespace="top.liheji.server.mapper.UploadInfoMapper"/>
 
-    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.FileAttr">
+    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.UploadInfo">
         <id property="id" column="id" jdbcType="INTEGER"/>
         <result property="fileName" column="file_name" jdbcType="VARCHAR"/>
-        <result property="fileSize" column="file_size" jdbcType="BIGINT"/>
-        <result property="fileHash" column="file_hash" jdbcType="VARCHAR"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="version" column="version" jdbcType="INTEGER"/>
+        <result property="fileInfoId" column="file_info_id" jdbcType="INTEGER"/>
         <result property="accountId" column="account_id" jdbcType="INTEGER"/>
         <association property="account"
                      column="account_id"
                      fetchType="lazy"
                      select="top.liheji.mapper.AccountMapper.selectById">
         </association>
+        <association property="fileInfo"
+                     column="file_info_id"
+                     fetchType="lazy"
+                     select="top.liheji.mapper.FileInfoMapper.selectById">
+        </association>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,file_name,file_size,
-        file_hash,update_time,create_time,
-        version,account_id
+        id
+        ,file_name,create_time,
+        file_info_id,account_id
     </sql>
 </mapper>

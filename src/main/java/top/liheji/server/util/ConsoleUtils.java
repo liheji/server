@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * @author : Galaxy
@@ -15,8 +17,6 @@ import java.io.InputStream;
  */
 @Slf4j
 public class ConsoleUtils {
-    public static final String SERVER_STATIC_PATH = "/usr/local/tomcat/webapps/static";
-
     /**
      * 执行命令
      *
@@ -50,8 +50,7 @@ public class ConsoleUtils {
      * @param filePath 授权文件路径
      */
     public static void authorize(String filePath) {
-        String res = execute(String.format("ls -l %s|awk '{print $1}'", filePath));
-        if (res == null || !res.contains("x")) {
+        if (!Files.isExecutable(Paths.get(filePath))) {
             execute(String.format("chmod +x %s", filePath));
         }
     }

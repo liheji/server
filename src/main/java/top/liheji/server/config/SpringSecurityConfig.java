@@ -65,7 +65,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //验证码过滤器
-        // 只有这些URL需要拦截并识别验证码
+        // 这些URL需要拦截并识别验证码
         captchaFilter.setMatchers("/login", "/before/forget", "/before/register");
         // 特别的需要拦截并识别验证码
         captchaFilter.setOtherMatcherFunction(request -> {

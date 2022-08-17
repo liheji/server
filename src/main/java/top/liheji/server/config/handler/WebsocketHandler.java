@@ -96,7 +96,7 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
                     if ("0".equals(obj.get("use"))) {
                         ssh.setPassword((String) obj.get("password"));
                     } else {
-                        ssh.setAuthFile(FileUtils.resourceFile("files", (String) obj.get("authFile")).getAbsolutePath());
+                        ssh.setAuthFile(FileUtils.resourceFile("uploads", (String) obj.get("authFile")).getAbsolutePath());
                     }
                     ssh.connect();
                     objectMap.put("ssh", ssh);

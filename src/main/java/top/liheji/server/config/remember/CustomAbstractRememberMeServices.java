@@ -50,7 +50,7 @@ import top.liheji.server.pojo.AuthGroup;
 import top.liheji.server.pojo.AuthPermission;
 import top.liheji.server.pojo.PassToken;
 import top.liheji.server.service.*;
-import top.liheji.server.util.SpringBeanUtils;
+import top.liheji.server.util.BeanUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -150,8 +150,8 @@ public abstract class CustomAbstractRememberMeServices implements RememberMeServ
                     List<AuthPermission> permissions = null;
 
                     if (account.getIsSuperuser()) {
-                        groups = SpringBeanUtils.getBean(AuthGroupService.class).list();
-                        permissions = SpringBeanUtils.getBean(AuthPermissionService.class).list();
+                        groups = BeanUtils.getBean(AuthGroupService.class).list();
+                        permissions = BeanUtils.getBean(AuthPermissionService.class).list();
                     } else {
                         groups = account.getAuthGroups();
                         permissions = account.getAuthPermissions();

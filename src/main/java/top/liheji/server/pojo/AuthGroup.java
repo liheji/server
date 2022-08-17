@@ -5,12 +5,11 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import top.liheji.server.service.AuthGroupPermissionsService;
-import top.liheji.server.util.SpringBeanUtils;
+import top.liheji.server.util.BeanUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -50,13 +49,13 @@ public class AuthGroup implements Serializable {
 
     public List<AuthPermission> getAuthPermissions() {
         if (this.authPermissions == null && this.id != null) {
-            this.authPermissions = SpringBeanUtils.getBean(AuthGroupPermissionsService.class).selectPermissionByGroupId(this.id);
+            this.authPermissions = BeanUtils.getBean(AuthGroupPermissionsService.class).selectPermissionByGroupId(this.id);
         }
         return authPermissions;
     }
 
     public boolean saveBatchPermission(List<Integer> permissionIds) {
-        AuthGroupPermissionsService groupPermissionsService = SpringBeanUtils.getBean(AuthGroupPermissionsService.class);
+        AuthGroupPermissionsService groupPermissionsService = BeanUtils.getBean(AuthGroupPermissionsService.class);
         groupPermissionsService.remove(
                 new LambdaQueryWrapper<AuthGroupPermissions>()
                         .eq(AuthGroupPermissions::getGroupId, this.id)

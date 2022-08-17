@@ -49,7 +49,7 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService {
         );
 
         if (username == null || "".equals(username) || account == null) {
-            throw new UsernameNotFoundException("用户名不存在");
+            throw new UsernameNotFoundException("用户不存在");
         }
 
         Set<GrantedAuthority> auths = new HashSet<>();

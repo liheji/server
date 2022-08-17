@@ -5,7 +5,7 @@ import org.apache.ibatis.cache.Cache;
 import org.springframework.data.redis.connection.RedisServerCommands;
 import org.springframework.data.redis.core.RedisTemplate;
 import top.liheji.server.util.CypherUtils;
-import top.liheji.server.util.SpringBeanUtils;
+import top.liheji.server.util.BeanUtils;
 
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -111,7 +111,7 @@ public class MybatisPlusRedisCache implements Cache {
     private void checkTemplate() {
         if (this.redisTemplate == null) {
             //由于启动期间注入失败，只能运行期间注入，这段代码可以删除
-            this.redisTemplate = (RedisTemplate<String, Object>) SpringBeanUtils.getBean("redisTemplate");
+            this.redisTemplate = (RedisTemplate<String, Object>) BeanUtils.getBean("redisTemplate");
         }
     }
 }

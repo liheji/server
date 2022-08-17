@@ -79,7 +79,7 @@ public class HrbeuUtils {
             i++;
         }
 
-        File newFile = FileUtils.genNoRepeatFile(".csv", "files");
+        File newFile = FileUtils.genNoRepeatFile(".csv", "uploads");
         wk.save(newFile.getAbsolutePath(), com.aspose.cells.SaveFormat.CSV);
 
         //定时删除生成的文件课表文件

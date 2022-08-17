@@ -10,11 +10,11 @@ import java.util.Date;
  * 文件信息
  *
  * @author Galaxy
- * @TableName server_file_attr
+ * @TableName server_file_info
  */
-@TableName(value = "server_file_attr")
+@TableName(value = "server_file_info")
 @Data
-public class FileAttr implements Serializable {
+public class FileInfo implements Serializable {
     /**
      * 数据库字段
      */
@@ -27,27 +27,21 @@ public class FileAttr implements Serializable {
 
     private String fileHash;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Date updateTime;
-
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
-
-    @Version
-    @TableField(fill = FieldFill.INSERT)
-    private Integer version;
-
-    /**
-     * 外键
-     */
-    private Integer accountId;
 
     /**
      * 非数据库字段
      */
     @TableField(exist = false)
-    private Account account;
-
-    @TableField(exist = false)
     private static final long serialVersionUID = -5714303279467640238L;
+
+    public FileInfo() {
+    }
+
+    public FileInfo(String fileName, Long fileSize, String fileHash) {
+        this.fileName = fileName;
+        this.fileSize = fileSize;
+        this.fileHash = fileHash;
+    }
 }

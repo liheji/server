@@ -4,12 +4,10 @@ import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import top.liheji.server.service.AccountService;
-import top.liheji.server.service.AuthGroupPermissionsService;
-import top.liheji.server.util.SpringBeanUtils;
+import top.liheji.server.util.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 /**
  * 特殊通行Token
@@ -80,7 +78,7 @@ public class PassToken implements Serializable {
 
     public Account getAccount() {
         if (this.account == null && this.id != null) {
-            this.account = SpringBeanUtils.getBean(AccountService.class).getById(this.accountId);
+            this.account = BeanUtils.getBean(AccountService.class).getById(this.accountId);
         }
         return account;
     }
