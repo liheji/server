@@ -32,3 +32,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### 隐私保护 ###
+src/main/resources/application.yml

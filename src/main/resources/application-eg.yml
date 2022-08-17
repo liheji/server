@@ -1,0 +1,92 @@
+server:
+  servlet:
+    session:
+      tracking-modes: cookie
+      cookie:
+        http-only: true
+  port: 8080
+
+spring:
+  jmx:
+    enabled: false
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 16384MB
+      max-request-size: 16384MB
+  datasource: # 配置数据库连接
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/数据库名称?characterEncoding=utf-8&useSSL=false&allowMultiQueries=true
+    username: 用户名
+    password: 密码
+    type: com.alibaba.druid.pool.DruidDataSource
+  mail:
+    host: smtp.qq.com
+    username: 邮箱账号
+    password: 邮箱认证密码
+    port: 587
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          socketFactoryClass: javax.net.ssl.SSLSocketFactory
+  redis:
+    database: 1
+    host: 127.0.0.1
+    port: 6379
+    timeout: 30000
+    connectTimeout: 60000
+    lettuce:
+      pool:
+        max-active: 10
+        max-wait: -1
+        min-idle: 1
+    jedis:
+      pool:
+        max-active: 10
+        max-wait: -1
+        min-idle: 1
+
+mybatis-plus:
+  type-aliases-package: top.liheji.pojo
+  mapper-locations: classpath:mapper/*Mapper.xml
+  global-config:
+    db-config:
+      id-type: auto
+      table-prefix: server_
+  configuration:
+    cache-enabled: true
+    lazy-loading-enabled: true
+
+logging:
+  level:
+    top.liheji.server: info
+  config: classpath:log4j2.xml
+
+permission:
+  list:
+    - table: auth_group
+      all: 权限分组(角色)
+    - table: auth_permission
+      add: 添加权限
+      change: 修改权限描述
+      view: 查看权限
+    - table: server_account
+      add: 创建用户(生成注册码)
+      change: 修改所有用户信息
+      delete: 逻辑删除用户
+      view: 查看所有用户信息
+    - table: server_file_info
+      add: 上传文件
+      delete: 删除上传的文件
+      view: 查看上传的文件
+      download: 下载上传的文件
+    - table: server_pass_token
+      all: 特殊通行Token
+    - table: server_web_socket
+      use: 使用WebSocket
+    - table: server_format
+      use: 使用课程格式化
+  create: false
+
+# debug: true
