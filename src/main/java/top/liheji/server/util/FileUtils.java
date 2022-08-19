@@ -20,7 +20,7 @@ import java.security.MessageDigest;
  */
 @Slf4j
 public class FileUtils {
-    private static final String RESOURCE_DIR = "/usr/local/tomcat/resource";
+    private static final String RESOURCE_DIR = "/usr/local/tomcat/resources";
 
     /**
      * 保存文件
@@ -48,16 +48,22 @@ public class FileUtils {
         //为读取文件提供流通道
         @Cleanup InputStream in = file.getInputStream();
         @Cleanup OutputStream out = new FileOutputStream(f);
-        MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+        MessageDigest digestMd5 = MessageDigest.getInstance("MD5");
+        MessageDigest digestSSha256 = MessageDigest.getInstance("SHA-256");
 
         int num;
         byte[] bytes = new byte[1024];
         while ((num = in.read(bytes)) != -1) {
             out.write(bytes, 0, num);
-            messageDigest.update(bytes, 0, num);
+            digestMd5.update(bytes, 0, num);
+            digestSSha256.update(bytes, 0, num);
         }
 
-        return new FileInfo(f.getName(), file.getSize(), CypherUtils.bytesToString(messageDigest.digest()));
+        return new FileInfo(
+                f.getName(),
+                file.getSize(),
+                CypherUtils.bytesToString(digestMd5.digest()) + CypherUtils.bytesToString(digestSSha256.digest())
+        );
     }
 
     /**

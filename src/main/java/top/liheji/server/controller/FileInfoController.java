@@ -81,7 +81,7 @@ public class FileInfoController {
         return map;
     }
 
-    @GetMapping("verify")
+    @PostMapping("verify")
     @PreAuthorize("hasAuthority('add_file_info')")
     public Map<String, Object> checkFileInfo(Long fileSize,
                                              String fileHash,
