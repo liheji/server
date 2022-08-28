@@ -49,7 +49,7 @@ public class MybatisPlusRedisCache implements Cache {
         checkTemplate();
         try {
             //将key加密后存入
-            redisTemplate.opsForHash().put(this.id, CypherUtils.encodeToSha256(key.toString()), value);
+            redisTemplate.opsForHash().put(this.id, CypherUtils.encodeToHash(key.toString(), "SHA-256"), value);
         } catch (Exception e) {
             log.error(this.id + " 保存数据到Redis缓存错误，信息：" + e);
         }
@@ -60,7 +60,7 @@ public class MybatisPlusRedisCache implements Cache {
         checkTemplate();
         try {
             if (key != null) {
-                return redisTemplate.opsForHash().get(this.id, CypherUtils.encodeToSha256(key.toString()));
+                return redisTemplate.opsForHash().get(this.id, CypherUtils.encodeToHash(key.toString(), "SHA-256"));
             }
         } catch (Exception e) {
             log.error(this.id + " 获取Redis缓存数据错误，信息：" + e);
@@ -73,7 +73,7 @@ public class MybatisPlusRedisCache implements Cache {
         checkTemplate();
         try {
             if (key != null) {
-                redisTemplate.opsForHash().delete(this.id, CypherUtils.encodeToSha256(key.toString()));
+                redisTemplate.opsForHash().delete(this.id, CypherUtils.encodeToHash(key.toString(), "SHA-256"));
             }
         } catch (Exception e) {
             log.error(this.id + " 移除Redis缓存数据错误，信息：" + e);

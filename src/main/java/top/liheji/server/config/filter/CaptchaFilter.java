@@ -24,7 +24,7 @@ import java.util.function.Function;
  * @time : 2022/1/29 20:47
  * @create : IdeaJ
  * @project : serverPlus
- * @description : 借用用户名密码的过滤器实现验证码功能
+ * @description : 过滤器: 实现验证码自主验证功能
  */
 @Component
 public class CaptchaFilter extends OncePerRequestFilter {
@@ -37,6 +37,8 @@ public class CaptchaFilter extends OncePerRequestFilter {
     private String[] matchers;
 
     private Function<HttpServletRequest, Boolean> otherMatcherFunction;
+
+    private Function<HttpServletRequest, Boolean> excludeMatcherFunction;
 
     public CaptchaFilter() {
     }
@@ -51,6 +53,10 @@ public class CaptchaFilter extends OncePerRequestFilter {
 
     public void setOtherMatcherFunction(Function<HttpServletRequest, Boolean> otherMatcherFunction) {
         this.otherMatcherFunction = otherMatcherFunction;
+    }
+
+    public void setExcludeMatcherFunction(Function<HttpServletRequest, Boolean> excludeMatcherFunction) {
+        this.excludeMatcherFunction = excludeMatcherFunction;
     }
 
     @Override
@@ -70,6 +76,7 @@ public class CaptchaFilter extends OncePerRequestFilter {
             objectMap.put("code", 1);
             objectMap.put("msg", ex.getMessage());
             out.write(JSONObject.toJSONString(objectMap));
+            out.flush();
             out.close();
         }
     }
@@ -80,7 +87,7 @@ public class CaptchaFilter extends OncePerRequestFilter {
     }
 
     private void attemptAuthentication(HttpServletRequest request) throws AuthenticationException {
-        if (requiresCaptcha(request) || otherRequireCaptcha(request)) {
+        if ((requiresCaptcha(request) || otherRequireCaptcha(request)) && !excludeRequireCaptcha(request)) {
             String captcha = obtainCaptcha(request);
 
             if (captcha == null) {
@@ -114,6 +121,13 @@ public class CaptchaFilter extends OncePerRequestFilter {
     private boolean otherRequireCaptcha(HttpServletRequest request) {
         if (this.otherMatcherFunction != null) {
             return this.otherMatcherFunction.apply(request);
+        }
+        return false;
+    }
+
+    private boolean excludeRequireCaptcha(HttpServletRequest request) {
+        if (this.excludeMatcherFunction != null) {
+            return this.excludeMatcherFunction.apply(request);
         }
         return false;
     }

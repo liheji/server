@@ -1,4 +1,4 @@
-package top.liheji.server.config.remember;
+package top.liheji.server.config.auth.remember;
 
 /*
  * Copyright 2002-2020 the original author or authors.

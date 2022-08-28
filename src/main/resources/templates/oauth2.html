@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>等待重定向</title></head>
+<body>
+<p>%s</p>
+<p>页面将在<span id="sec" style="margin: 0 5px 0 5px;color: #409EFF">5</span>秒后跳转</p>
+<script type="text/javascript">
+    var time = 4;
+    window.onload = () => {
+        const timer = setInterval(() => {
+            document.getElementById("sec").innerText = time.toString();
+            if (time <= 0) {
+                clearInterval(timer);
+                window.location.href = "/#/main/personal";
+            }
+            time--;
+        }, 1000)
+    } </script>
+</body>
+</html>

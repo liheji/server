@@ -97,7 +97,7 @@ public class FileInfoController {
                         .eq(FileInfo::getFileHash, fileHash)
         );
         if (fileInfo == null) {
-            map.put("key", captchaService.genSecret(current, 5 * 60));
+            map.put("key", captchaService.genSecret(current.getUsername(), 5 * 60));
         } else {
             UploadInfo uploadInfo = uploadInfoService.getOne(
                     new LambdaQueryWrapper<UploadInfo>()
@@ -128,7 +128,7 @@ public class FileInfoController {
                                            @RequestAttribute("account") Account current) throws Exception {
         Map<String, Object> map = new HashMap<>(4);
 
-        if (!captchaService.checkSecret(current, uToken)) {
+        if (!captchaService.checkSecret(current.getUsername(), uToken)) {
             map.put("code", 1);
             map.put("msg", "上传被禁止");
 
@@ -173,7 +173,7 @@ public class FileInfoController {
         UploadInfo uploadInfo = uploadInfoList.get(0);
 
         //get方式提交的
-        File file = FileUtils.resourceFile("uploads", uploadInfo.getFileInfo().getFileName());
+        File file = FileUtils.staticFile("uploads", uploadInfo.getFileInfo().getFileName());
         if (!file.exists()) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -251,7 +251,7 @@ public class FileInfoController {
         UploadInfo uploadInfo = uploadInfoList.get(0);
 
         //get方式提交的
-        File file = FileUtils.resourceFile("uploads", uploadInfo.getFileInfo().getFileName());
+        File file = FileUtils.staticFile("uploads", uploadInfo.getFileInfo().getFileName());
         if (!file.exists()) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;

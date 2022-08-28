@@ -57,7 +57,7 @@ public class UploadInfo implements Serializable {
     }
 
     public FileInfo getFileInfo() {
-        if (this.fileInfo == null && this.id != null) {
+        if (this.id != null) {
             this.fileInfo = BeanUtils.getBean(FileInfoService.class).getById(this.id);
         }
         return fileInfo;

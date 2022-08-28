@@ -35,7 +35,7 @@ public class WebSocketInterceptor implements HandshakeInterceptor {
             String tid = pathVar.get("tid");
             Account current = (Account) req.getAttribute("account");
             //这里做一个简单的鉴权，只有符合条件的鉴权才能握手成功
-            return captchaService.checkSecret(current, tid);
+            return captchaService.checkSecret(current.getUsername(), tid);
         }
 
         return false;

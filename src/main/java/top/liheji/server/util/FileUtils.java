@@ -4,10 +4,12 @@ import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jmimemagic.Magic;
 import net.sf.jmimemagic.MagicMatch;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 import top.liheji.server.pojo.FileInfo;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 
@@ -30,7 +32,7 @@ public class FileUtils {
      * @throws Exception IOException
      */
     public static FileInfo uploadFile(MultipartFile file) throws Exception {
-        File dirFile = resourceFile("uploads");
+        File dirFile = staticFile("uploads");
 
         //不存在则创建files文件夹
         if (!dirFile.exists()) {
@@ -130,7 +132,7 @@ public class FileUtils {
      * @return 文件
      */
     public static File genNoRepeatFile(String suffix, String... args) {
-        File baseDir = resourceFile(args);
+        File baseDir = staticFile(args);
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
@@ -144,14 +146,41 @@ public class FileUtils {
     }
 
     /**
-     * 获取Resource目录下的文件或文件夹
+     * 获取服务器指定路径下的资源
+     * 不创建不存在的文件或文件夹
+     *
+     * @param args 文件子路径
+     * @return 文件
+     */
+    public static File staticFile(String... args) {
+        return Paths.get(RESOURCE_DIR, args).toFile();
+    }
+
+    /**
+     * 获取项目 resources目录下的文件或文件夹
      * 不创建不存在的文件或文件夹
      *
      * @param args 文件子路径
      * @return 文件
      */
     public static File resourceFile(String... args) {
-        return Paths.get(RESOURCE_DIR, args).toFile();
+        File resFile;
+        try {
+            resFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX);
+        } catch (Exception e) {
+            URL url = Thread.currentThread().getContextClassLoader().getResource("");
+            if (url != null) {
+                resFile = new File(url.getPath());
+            } else {
+                resFile = null;
+            }
+        }
+
+        if (args.length > 0) {
+            resFile = new File(resFile, String.join(File.separator, args));
+        }
+
+        return resFile;
     }
 
     /**

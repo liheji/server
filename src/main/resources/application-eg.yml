@@ -46,6 +46,31 @@ spring:
         max-active: 10
         max-wait: -1
         min-idle: 1
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: KEY
+            client-secret: SECRET
+            scope: read:user
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+          qq:
+            client-id: KEY
+            client-secret: SECRET
+            provider: qq
+            client-name: QQ登录
+            authorization-grant-type: authorization_code
+            client-authentication-method: post
+            scope: get_user_info
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          qq:
+            authorization-uri: https://graph.qq.com/oauth2.0/authorize
+            token-uri: https://graph.qq.com/oauth2.0/token
+            # 配置为 QQ获取 OpenId的 Url
+            user-info-uri: https://graph.qq.com/oauth2.0/me
+            user-name-attribute: "openid"
 
 mybatis-plus:
   type-aliases-package: top.liheji.pojo
@@ -88,5 +113,3 @@ permission:
     - table: server_format
       use: 使用课程格式化
   create: false
-
-# debug: true

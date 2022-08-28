@@ -1,4 +1,4 @@
-package top.liheji.server.config.remember.impl;
+package top.liheji.server.config.auth.remember.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;

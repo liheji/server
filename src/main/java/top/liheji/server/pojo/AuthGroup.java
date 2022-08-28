@@ -48,7 +48,7 @@ public class AuthGroup implements Serializable {
     }
 
     public List<AuthPermission> getAuthPermissions() {
-        if (this.authPermissions == null && this.id != null) {
+        if (this.id != null) {
             this.authPermissions = BeanUtils.getBean(AuthGroupPermissionsService.class).selectPermissionByGroupId(this.id);
         }
         return authPermissions;

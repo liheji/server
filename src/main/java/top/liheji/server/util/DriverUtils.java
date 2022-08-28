@@ -31,9 +31,9 @@ public class DriverUtils {
     private DriverUtils() {
         File file;
         if (SystemUtils.isWindows()) {
-            file = FileUtils.resourceFile("drivers", "geckodriver_win.exe");
+            file = FileUtils.staticFile("drivers", "geckodriver_win.exe");
         } else if (SystemUtils.isLinux()) {
-            file = FileUtils.resourceFile("drivers", "geckodriver_linux");
+            file = FileUtils.staticFile("drivers", "geckodriver_linux");
         } else {
             throw new RuntimeException("Platform not supported！");
         }

@@ -1,4 +1,4 @@
-package top.liheji.server.config.remember.impl;
+package top.liheji.server.config.auth.remember.impl;
 
 /*
  * Copyright 2002-2017 the original author or authors.
@@ -20,13 +20,19 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.log.LogMessage;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.rememberme.*;
 import org.springframework.util.Assert;
 import top.liheji.server.pojo.Account;
+import top.liheji.server.pojo.AuthAccount;
 import top.liheji.server.pojo.PersistentDevices;
 import top.liheji.server.pojo.PersistentLogins;
+import top.liheji.server.service.AuthAccountService;
 import top.liheji.server.service.PersistentDevicesService;
 import top.liheji.server.service.PersistentLoginsService;
 import top.liheji.server.util.WebUtils;
@@ -47,7 +53,10 @@ import java.util.Date;
  * 增加记住登录设备功能
  * 使用 MybatisPlus操作数据库
  */
-public class CustomTokenRememberMeServices extends top.liheji.server.config.remember.CustomAbstractRememberMeServices {
+public class CustomTokenRememberMeServices extends top.liheji.server.config.auth.remember.CustomAbstractRememberMeServices {
+
+    @Autowired
+    private AuthAccountService authAccountService;
 
     @Autowired
     private PersistentLoginsService persistentLoginsService;
@@ -142,7 +151,7 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
                                 .eq(PersistentDevices::getUsername, device.getUsername())
                 );
             } else {
-                response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                throw new RememberMeAuthenticationException("Login device is not accepted");
             }
         } catch (Exception ex) {
             this.logger.error("Failed to update token: ", ex);
@@ -158,8 +167,70 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
     @Override
     protected void onLoginSuccess(HttpServletRequest request, HttpServletResponse response,
                                   Authentication successfulAuthentication) {
-
         String username = successfulAuthentication.getName();
+
+        // Oauth2认证
+        if (successfulAuthentication instanceof OAuth2AuthenticationToken) {
+            OAuth2AuthenticationToken oAuth2Token = (OAuth2AuthenticationToken) successfulAuthentication;
+            // 检查 Cookie
+            UserDetails userDetails = checkLoginCookie(request);
+            // 查询是否存在
+            AuthAccount obj = authAccountService.getOne(
+                    new LambdaQueryWrapper<AuthAccount>()
+                            .eq(AuthAccount::getOpenId, username)
+            );
+            try {
+                if (userDetails != null) {
+                    if (obj == null) {
+                        // 绑定用户
+                        obj = new AuthAccount();
+                        OAuth2User user = oAuth2Token.getPrincipal();
+                        obj.mapToObj(user.getAttributes());
+                        Account account = accountService.getOne(
+                                new LambdaQueryWrapper<Account>()
+                                        .eq(Account::getUsername, userDetails.getUsername())
+                        );
+                        obj.setAccountId(account.getId());
+                        // 保存认证
+                        authAccountService.save(obj);
+
+                        request.setAttribute("info", "绑定完成");
+                    }
+
+                    // 设置认证权限
+                    SecurityContextHolder.getContext().setAuthentication(
+                            new OAuth2AuthenticationToken(
+                                    new DefaultOAuth2User(userDetails.getAuthorities(), obj.objToMap(), "username"),
+                                    userDetails.getAuthorities(),
+                                    oAuth2Token.getAuthorizedClientRegistrationId()
+                            )
+                    );
+
+                    return;
+                } else {
+                    if (obj == null) {
+                        throw new RememberMeAuthenticationException("未绑定第三方账号。");
+                    }
+                    // 存在即进行登陆成功 Cookie 设置
+                    username = obj.gainAccount().getUsername();
+                    UserDetails details = getUserDetailsService().loadUserByUsername(username);
+                    // 设置认证权限
+                    SecurityContextHolder.getContext().setAuthentication(
+                            new OAuth2AuthenticationToken(
+                                    new DefaultOAuth2User(details.getAuthorities(), obj.objToMap(), "username"),
+                                    details.getAuthorities(),
+                                    oAuth2Token.getAuthorizedClientRegistrationId()
+                            )
+                    );
+
+                    request.setAttribute("info", "登陆成功");
+                }
+            } catch (Exception ex) {
+                request.setAttribute("error", ex.getMessage());
+                return;
+            }
+        }
+
         this.logger.debug(LogMessage.format("Creating new persistent login for user %s", username));
         Date curDate = new Date();
         PersistentLogins persistentToken = new PersistentLogins(username, generateSeriesData(),
@@ -172,11 +243,9 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
                 device.setSeries(persistentToken.getSeries());
                 device.setLastUsed(curDate);
                 String paramValue = request.getParameter(getParameter());
-                if (paramValue != null) {
-                    if (!paramValue.equalsIgnoreCase("true") && !paramValue.equals("1")) {
-                        persistentToken = new PersistentLogins(username, persistentToken.getSeries(),
-                                persistentToken.getToken(), new Date(0L));
-                    }
+                if (paramValue == null || "false".equalsIgnoreCase(paramValue) || "0".equals(paramValue)) {
+                    persistentToken = new PersistentLogins(username, persistentToken.getSeries(),
+                            persistentToken.getToken(), new Date(0L));
                 }
                 this.persistentLoginsService.save(persistentToken);
                 addCookie(persistentToken, request, response);
@@ -207,11 +276,46 @@ public class CustomTokenRememberMeServices extends top.liheji.server.config.reme
                     request.setAttribute("account", cur);
                 }
             } else {
-                response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                request.setAttribute("error", "不允许登录的设备");
             }
         } catch (Exception ex) {
-            this.logger.error("Failed to save persistent token ", ex);
+            this.logger.error("Failed to save token ", ex);
         }
+    }
+
+    protected UserDetails checkLoginCookie(HttpServletRequest request) {
+        // 获取 Cookie
+        String rememberMeCookie = extractRememberMeCookie(request);
+        if (rememberMeCookie == null) {
+            return null;
+        }
+        String[] cookieTokens = decodeCookie(rememberMeCookie);
+        if (cookieTokens.length != 2) {
+            throw new InvalidCookieException("Invalid Cookie");
+        }
+        String presentedSeries = cookieTokens[0];
+        String presentedToken = cookieTokens[1];
+        PersistentLogins token = persistentLoginsService.getById(presentedSeries);
+        if (token == null) {
+            throw new RememberMeAuthenticationException("No Session found");
+        }
+        if (!presentedToken.equals(token.getToken())) {
+            PersistentDevices devices = new PersistentDevices();
+            devices.setSeries("");
+            this.persistentDevicesService.update(
+                    devices,
+                    new LambdaQueryWrapper<PersistentDevices>()
+                            .eq(PersistentDevices::getSeries, token.getSeries())
+            );
+            this.persistentLoginsService.removeById(token.getSeries());
+            throw new CookieTheftException("Invalid remember-me token");
+        }
+
+        if (token.getLastUsed().getTime() != 0 && token.getLastUsed().getTime() + getTokenValiditySeconds() * 1000L < System.currentTimeMillis()) {
+            throw new RememberMeAuthenticationException("Remember-me login has expired");
+        }
+
+        return getUserDetailsService().loadUserByUsername(token.getUsername());
     }
 
     @Override

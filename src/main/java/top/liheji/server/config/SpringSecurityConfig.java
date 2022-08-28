@@ -1,11 +1,12 @@
 package top.liheji.server.config;
 
 import com.alibaba.fastjson.JSONObject;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,18 +14,36 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
+import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
 import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
-import top.liheji.server.config.remember.impl.CustomTokenRememberMeServices;
+import top.liheji.server.config.auth.remember.impl.CustomTokenRememberMeServices;
+import top.liheji.server.config.auth.client.MultipleAuthorizationCodeTokenResponseClient;
+import top.liheji.server.config.auth.client.QQAuthorizationCodeTokenResponseClient;
+import top.liheji.server.config.auth.service.MultipleOAuth2UserServiceImpl;
+import top.liheji.server.config.auth.service.QQOAuth2UserServiceImpl;
 import top.liheji.server.pojo.Account;
+import top.liheji.server.util.FileUtils;
 import top.liheji.server.util.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author : Galaxy
@@ -42,9 +61,16 @@ import java.util.Map;
 @Slf4j
 @Configuration
 @EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+//@EnableWebSecurity(debug = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final String rememberKey = StringUtils.genUuid();
+    private static final String REMEMBER_KEY = StringUtils.genUuid();
+    /**
+     * 非标准的 Oauth2.0 认证注册ID1
+     */
+    public static final String QQ_REGISTRATION_ID = "qq";
+    public static final String WEIBO_REGISTRATION_ID = "weibo";
+    public static final String WECHAT_REGISTRATION_ID = "wechat";
 
     @Autowired
     private CaptchaFilter captchaFilter;
@@ -55,10 +81,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private CaptchaAuthenticationProvider captchaAuthenticationProvider;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(captchaAuthenticationProvider);
         // 用户加载器
         auth.userDetailsService(userDetailsService)
+                // 密码加密函数
                 .passwordEncoder(passwordEncoder());
     }
 
@@ -66,21 +97,28 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         //验证码过滤器
         // 这些URL需要拦截并识别验证码
-        captchaFilter.setMatchers("/login", "/before/forget", "/before/register");
-        // 特别的需要拦截并识别验证码
-        captchaFilter.setOtherMatcherFunction(request -> {
+        captchaFilter.setMatchers("/login", "/before/forget", "/before/register", "/account/personal");
+        // 设置拦截URL中需要排除验证的特殊项
+        captchaFilter.setExcludeMatcherFunction(request -> {
             String uri = request.getRequestURI();
+
+            // 手机号暂不支持验证码（没钱开）
             if (uri.startsWith("/account/personal")) {
                 String property = request.getParameter("property");
-                return "email".equals(property) || "password".equals(property);
+                return "mobile".equals(property);
+            }
+
+            // 验证码登录不需要检查图片验证码
+            if (uri.startsWith("/login")) {
+                String authType = Optional.ofNullable(request.getParameter("auth-type")).orElse("").trim();
+                return "CAPTCHA".equalsIgnoreCase(authType);
             }
             return false;
         });
 
         http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(paramSetFilter, UsernamePasswordAuthenticationFilter.class);
-
-        log.info("过滤器加载完成");
+                .addFilterAfter(paramSetFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         // 路径拦截设置
         http.authorizeRequests()
@@ -91,50 +129,19 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
         //登录设置
         http.formLogin()
-                .loginPage("/login")
-                .failureHandler((req, resp, e) -> {
-                    resp.setContentType("application/json;charset=utf-8");
-                    PrintWriter out = resp.getWriter();
-                    Map<String, Object> objectMap = new HashMap<>(2);
-                    objectMap.put("code", 1);
+                .loginPage("/login");
 
-                    String msg = e.getMessage();
-                    if (e instanceof LockedException) {
-                        msg = "账户被锁定";
-                    } else if (e instanceof CredentialsExpiredException) {
-                        msg = "密码过期";
-                    } else if (e instanceof AccountExpiredException) {
-                        msg = "账户过期";
-                    } else if (e instanceof DisabledException) {
-                        msg = "账户被禁用";
-                    } else if (e instanceof BadCredentialsException) {
-                        msg = "用户名或密码错误";
-                    }
+        // 第三方登录
+        http.oauth2Login()
+                .tokenEndpoint()
+                .accessTokenResponseClient(accessTokenResponseClient())
+                .and()
+                .userInfoEndpoint()
+                .userService(oauth2UserService())
+                .and()
+                .successHandler(oauth2LoginSuccessHandler())
+                .failureHandler(oauth2LoginFailureHandler());
 
-                    objectMap.put("msg", msg);
-                    out.write(JSONObject.toJSONString(objectMap));
-                    out.flush();
-                    out.close();
-                })
-                .successHandler((req, resp, authentication) -> {
-                    resp.setContentType("application/json;charset=utf-8");
-                    Map<String, Object> objectMap = new HashMap<>(3);
-                    Account account = (Account) req.getAttribute("account");
-                    if (resp.getStatus() == HttpServletResponse.SC_NOT_ACCEPTABLE) {
-                        objectMap.put("code", 1);
-                        objectMap.put("msg", "无法识别登录设备，不允许登录");
-                        log.warn("无法识别的设备尝试登录");
-                    } else {
-                        objectMap.put("code", 0);
-                        objectMap.put("msg", "登录成功");
-                        objectMap.put("data", account);
-                    }
-                    PrintWriter out = resp.getWriter();
-                    out.write(JSONObject.toJSONString(objectMap));
-                    out.flush();
-                    out.close();
-                })
-                .permitAll();
 
         // 登出设置
         http.logout()
@@ -142,37 +149,24 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .deleteCookies()
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
-                .logoutSuccessHandler(((req, resp, authentication) -> {
-                    resp.setContentType("application/json;charset=utf-8");
-                    PrintWriter out = resp.getWriter();
-                    Map<String, Object> objectMap = new HashMap<>(2);
-                    objectMap.put("code", 0);
-                    objectMap.put("msg", "注销成功");
-                    out.write(JSONObject.toJSONString(objectMap));
-                    out.flush();
-                    out.close();
-                }))
+                .logoutSuccessHandler(logoutSuccessHandler())
                 .permitAll();
-
-        // 记住密码设置
-        http.rememberMe()
-                .key(rememberKey)
-                .rememberMeServices(rememberMeServices());
 
         // 跨域攻击拦截
         http.csrf()
+//                .disable();
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringAntMatchers("/before/cdn");
 
+        // formLogin：不管用，需要到下方的 authenticationFilter 函数中设置
+        // oauth2Login： 需要用到记住密码的服务
+        http.rememberMe()
+                .key(REMEMBER_KEY)
+                .rememberMeServices(rememberMeServices());
+
         // 未登录以及登录认证设置
         http.exceptionHandling()
-                .authenticationEntryPoint((req, resp, authException) -> {
-                    String tid = req.getParameter("token");
-                    if (tid == null || "".equals(tid.trim())) {
-                        resp.setContentType("application/json;charset=utf-8");
-                        resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    }
-                });
+                .authenticationEntryPoint(exceptionHandler());
 
         log.info("SpringSecurity配置加载完成");
     }
@@ -188,12 +182,189 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * 注入Security的rememberMeServices数据库表
+     * 聚合登录过滤器
      *
-     * @return 数据库服务类
+     * @return 登录过滤器
+     * @throws Exception 异常
+     */
+    @Bean
+    public MultipleLoginAuthenticationFilter authenticationFilter() throws Exception {
+        MultipleLoginAuthenticationFilter filter = new MultipleLoginAuthenticationFilter(super.authenticationManager());
+        // 记住密码设置
+        filter.setRememberMeServices(rememberMeServices());
+        // 登录成功和失败的回调
+        filter.setAuthenticationSuccessHandler(formLoginSuccessHandler());
+        filter.setAuthenticationFailureHandler(formLoginFailureHandler());
+        return filter;
+    }
+
+    /**
+     * 记住密码服务
+     *
+     * @return 记住密码服务
      */
     @Bean
     public CustomTokenRememberMeServices rememberMeServices() {
-        return new CustomTokenRememberMeServices(rememberKey, userDetailsService);
+        return new CustomTokenRememberMeServices(REMEMBER_KEY, userDetailsService);
+    }
+
+    /**
+     * Oauth 认证服务 使用code交换 access_token的具体逻辑
+     *
+     * @return {@link OAuth2AccessTokenResponseClient}
+     */
+    @Bean
+    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
+        MultipleAuthorizationCodeTokenResponseClient client = new MultipleAuthorizationCodeTokenResponseClient();
+        // 加入QQ自定义 QQAuthorizationCodeTokenResponseClient
+        client.getMultipleClient().put(QQ_REGISTRATION_ID, new QQAuthorizationCodeTokenResponseClient());
+        return client;
+    }
+
+    /**
+     * 请求用户信息 OAuth2User
+     *
+     * @return {@link OAuth2UserService}
+     */
+    @Bean
+    public OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
+        MultipleOAuth2UserServiceImpl service = new MultipleOAuth2UserServiceImpl();
+        // 加入QQ自定义QQOAuth2UserService
+        service.getMultipleService().put(QQ_REGISTRATION_ID, new QQOAuth2UserServiceImpl());
+        return service;
+    }
+
+    /**
+     * 登录成功的回调
+     *
+     * @return 回调函数接口
+     */
+    private AuthenticationSuccessHandler formLoginSuccessHandler() {
+        return (req, resp, authentication) -> {
+            resp.setContentType("application/json;charset=utf-8");
+            Map<String, Object> objectMap = new HashMap<>(3);
+            Account account = (Account) req.getAttribute("account");
+            if (resp.getStatus() == HttpServletResponse.SC_NOT_ACCEPTABLE) {
+                objectMap.put("code", 1);
+                objectMap.put("msg", "无法识别登录设备，不允许登录");
+                log.warn("无法识别的设备尝试登录");
+            } else {
+                objectMap.put("code", 0);
+                objectMap.put("msg", "登录成功");
+                objectMap.put("data", account);
+            }
+            PrintWriter out = resp.getWriter();
+            out.write(JSONObject.toJSONString(objectMap));
+            out.flush();
+            out.close();
+        };
+    }
+
+    /**
+     * 登录失败的回调
+     *
+     * @return 回调函数接口
+     */
+    private AuthenticationFailureHandler formLoginFailureHandler() {
+        return (req, resp, e) -> {
+            resp.setContentType("application/json;charset=utf-8");
+            PrintWriter out = resp.getWriter();
+            Map<String, Object> objectMap = new HashMap<>(2);
+            objectMap.put("code", 1);
+            objectMap.put("msg", "认证出错，请重试。");
+            out.write(JSONObject.toJSONString(objectMap));
+            out.flush();
+            out.close();
+        };
+    }
+
+    /**
+     * 登录成功的回调
+     *
+     * @return 回调函数接口
+     */
+    private AuthenticationSuccessHandler oauth2LoginSuccessHandler() {
+        return (req, resp, authentication) -> {
+            resp.setContentType("text/html;charset=utf-8");
+            // 获取输出信息
+            String msg = "";
+            String error = (String) req.getAttribute("error");
+            String info = (String) req.getAttribute("info");
+            if (Strings.isNotBlank(info) && Strings.isNotEmpty(info)) {
+                msg = String.format("<p style=\"color: #67C23A\">%s</p>", info);
+            }
+            if (Strings.isNotBlank(error) && Strings.isNotEmpty(error)) {
+                msg = String.format("<p style=\"color: #F56C6C\">%s</p>", error);
+            }
+            // 输出数据
+            resp.getWriter().write(oauth2Html(msg));
+        };
+    }
+
+    /**
+     * 登录失败的回调
+     *
+     * @return 回调函数接口
+     */
+    private AuthenticationFailureHandler oauth2LoginFailureHandler() {
+        return (req, resp, e) -> {
+            resp.setContentType("text/html;charset=utf-8");
+            resp.getWriter().write(oauth2Html("<p style=\"color: #F56C6C\"></p>"));
+        };
+    }
+
+    /**
+     * 登出成功的回调
+     *
+     * @return 回调函数接口
+     */
+    private LogoutSuccessHandler logoutSuccessHandler() {
+        return (req, resp, authentication) -> {
+            resp.setContentType("application/json;charset=utf-8");
+            PrintWriter out = resp.getWriter();
+            Map<String, Object> objectMap = new HashMap<>(2);
+            objectMap.put("code", 0);
+            objectMap.put("msg", "注销成功");
+            out.write(JSONObject.toJSONString(objectMap));
+            out.flush();
+            out.close();
+        };
+    }
+
+    /**
+     * 登录异常的回调
+     *
+     * @return 回调函数接口
+     */
+    private AuthenticationEntryPoint exceptionHandler() {
+        return (req, resp, authException) -> {
+            String tid = req.getParameter("token");
+            if (tid == null || "".equals(tid.trim())) {
+                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        };
+    }
+
+
+    /**
+     * 拼接返回的HTML
+     *
+     * @param msg 信息
+     * @return HTML文本
+     */
+    private String oauth2Html(String msg) {
+        StringBuilder builder = new StringBuilder();
+        try {
+            File oauth2 = FileUtils.resourceFile("templates", "oauth2.html");
+            @Cleanup FileInputStream fis = new FileInputStream(oauth2);
+            @Cleanup InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+            @Cleanup BufferedReader reader = new BufferedReader(isr);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+        } catch (Exception ignored) {
+        }
+        return String.format(builder.toString(), msg);
     }
 }

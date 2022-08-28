@@ -77,7 +77,7 @@ public class PassToken implements Serializable {
     }
 
     public Account getAccount() {
-        if (this.account == null && this.id != null) {
+        if (this.accountId != null) {
             this.account = BeanUtils.getBean(AccountService.class).getById(this.accountId);
         }
         return account;

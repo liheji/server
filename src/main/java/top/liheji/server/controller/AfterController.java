@@ -1,6 +1,7 @@
 package top.liheji.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -12,9 +13,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
-import top.liheji.server.pojo.Account;
-import top.liheji.server.pojo.AuthGroup;
-import top.liheji.server.pojo.AuthPermission;
+import top.liheji.server.pojo.*;
 import top.liheji.server.service.*;
 import top.liheji.server.util.*;
 
@@ -40,6 +39,9 @@ public class AfterController {
 
     @Autowired
     private CaptchaService captchaService;
+
+    @Autowired
+    private AuthAccountService authAccountService;
 
     /**
      * 代理请求
@@ -92,10 +94,28 @@ public class AfterController {
     @GetMapping("status")
     public Map<String, Object> status(@RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);
-
         map.put("code", 0);
         map.put("msg", "OK");
         map.put("data", CypherUtils.encodeToBase64(JSONObject.toJSONBytes(current)));
+        return map;
+    }
+
+    @DeleteMapping("authAccount")
+    public Map<String, Object> deleteAuthAccount(@RequestParam Integer id, @RequestAttribute("account") Account current) {
+        Map<String, Object> map = new HashMap<>(4);
+        map.put("code", 0);
+        map.put("msg", "解绑完成");
+        boolean ret = id != null && authAccountService.remove(
+                new LambdaQueryWrapper<AuthAccount>()
+                        .eq(AuthAccount::getAccountId, current.getId())
+                        .in(AuthAccount::getId, id)
+        );
+
+        if (!ret) {
+            map.put("code", 1);
+            map.put("msg", "解绑出错了");
+        }
+
         return map;
     }
 
@@ -182,7 +202,7 @@ public class AfterController {
 
         map.put("code", 0);
         map.put("msg", "密钥生成成功");
-        map.put("key", captchaService.genSecret(current, 5 * 60));
+        map.put("key", captchaService.genSecret(current.getUsername(), 5 * 60));
 
         return map;
     }
@@ -194,7 +214,7 @@ public class AfterController {
 
         map.put("code", 0);
         map.put("msg", "注册码生成成功");
-        map.put("key", captchaService.genSecret(current, 3 * 24 * 60 * 60));
+        map.put("key", captchaService.genSecret(current.getUsername(), 3 * 24 * 60 * 60));
 
         return map;
     }

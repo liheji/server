@@ -1023,8 +1023,8 @@ public enum MediaType {
     VIDEO_WVX(".wvx", "video/x_ms_wvx"),
     X_CONFERENCE_ICE(".ice", "x_conference/x_cooltalk");
 
-    private String suffix;
-    private String mediaType;
+    private final String suffix;
+    private final String mediaType;
 
     MediaType(String suffix, String mediaType) {
         this.suffix = suffix;

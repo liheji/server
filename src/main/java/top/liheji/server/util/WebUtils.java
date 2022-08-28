@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author : Galaxy
@@ -92,22 +93,40 @@ public class WebUtils {
             map.put("query", ip.trim());
         }
 
+
+        HashMap tmpMap = WebUtils.get(url, HashMap.class, null);
+        if (tmpMap != null) {
+            map.put("addr", tmpMap.get("addr"));
+            map.put("query", tmpMap.get("ip"));
+        } else {
+            map.put("code", 1);
+            map.put("msg", "查询出错");
+        }
+
+        return map;
+    }
+
+    /**
+     * GEt 请求
+     *
+     * @return 响应字符串
+     */
+    @Nullable
+    public static <T> T get(String url, Class<T> clazz, Function<String, Boolean> function) {
         try {
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder().url(url).build();
 
             Response response = client.newCall(request).execute();
+            String respStr = response.body().string();
+            if (function != null && function.apply(respStr)) {
+                return null;
+            }
 
-            HashMap tmpMap = JSONObject.parseObject(response.body().string(), HashMap.class);
-
-            map.put("addr", tmpMap.get("addr"));
-            map.put("query", tmpMap.get("ip"));
+            return JSONObject.parseObject(respStr, clazz);
         } catch (Exception e) {
-            map.put("code", 1);
-            map.put("msg", "查询错误");
+            return null;
         }
-
-        return map;
     }
 
     /**

@@ -16,23 +16,13 @@ public class CypherUtils {
     private static final String[] BYTE_CHARS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
 
     /**
-     * 利用java原生的摘要实现SHA256加密
+     * 利用java原生的摘要实现摘要算法
      *
      * @param str 需要加密后报文
      * @return 加密字符串
      */
-    public static String encodeToSha256(String str) {
-        return encodeToSha256(str.getBytes(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * 利用java原生的摘要实现MD5加密
-     *
-     * @param str 需要加密后的报文
-     * @return 加密字符串
-     */
-    public static String encodeToMd5(String str) {
-        return encodeToMd5(str.getBytes(StandardCharsets.UTF_8));
+    public static String encodeToHash(String str, String cypher) {
+        return encodeToHash(str.getBytes(StandardCharsets.UTF_8), cypher);
     }
 
     /**
@@ -61,30 +51,11 @@ public class CypherUtils {
      * @param bytes 需要加密后报文
      * @return 加密字符串
      */
-    public static String encodeToSha256(byte[] bytes) {
+    public static String encodeToHash(byte[] bytes, String cypher) {
         MessageDigest messageDigest;
         String encodeStr = "";
         try {
-            messageDigest = MessageDigest.getInstance("SHA-256");
-            messageDigest.update(bytes);
-            encodeStr = bytesToString(messageDigest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return encodeStr;
-    }
-
-    /**
-     * 利用java原生的摘要实现MD5加密
-     *
-     * @param bytes 需要加密后的报文字流
-     * @return 加密字符串
-     */
-    public static String encodeToMd5(byte[] bytes) {
-        MessageDigest messageDigest;
-        String encodeStr = "";
-        try {
-            messageDigest = MessageDigest.getInstance("MD5");
+            messageDigest = MessageDigest.getInstance(cypher);
             messageDigest.update(bytes);
             encodeStr = bytesToString(messageDigest.digest());
         } catch (NoSuchAlgorithmException e) {

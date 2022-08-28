@@ -1,7 +1,5 @@
 package top.liheji.server.service;
 
-import top.liheji.server.pojo.Account;
-
 /**
  * @author : Galaxy
  * @time : 2022/1/17 21:28
@@ -10,7 +8,7 @@ import top.liheji.server.pojo.Account;
  * @description : 验证码生成服务
  */
 public interface CaptchaService {
-    
+
     /**
      * 生成图片验证码
      *
@@ -25,48 +23,50 @@ public interface CaptchaService {
     /**
      * 邮箱发送验证码
      *
-     * @param receiver 接收者
+     * @param receiver 接收者邮箱
      */
     void sendEmailCaptcha(String receiver);
 
     /**
      * 电话发送验证码
      *
-     * @param receiver 接收者
+     * @param receiver 接收者手机号
      */
     void sendMobileCaptcha(String receiver);
 
     /**
-     * 返回验证码
-     *
-     * @param len 验证码长度
-     * @return 验证码
-     */
-    String genCaptcha(int len);
-
-    /**
      * 检查验证码
      *
-     * @param code 验证码
+     * @param code   验证码
+     * @param prefix 前缀
      * @return 检验是否通过
      */
-    boolean checkCaptcha(String code);
+    boolean checkCaptcha(String code, String... prefix);
+
+    /**
+     * 返回验证码
+     *
+     * @param len    验证码长度
+     * @param prefix 前缀
+     * @return 验证码
+     */
+    String genCaptcha(int len, String... prefix);
 
     /**
      * 生成秘钥
      *
-     * @param account 用户
-     * @param expire  过期时间
+     * @param username 用户名
+     * @param expire   过期时间
      * @return key
      */
-    String genSecret(Account account, long expire);
+    String genSecret(String username, long expire);
 
     /**
      * 检查秘钥
      *
-     * @param account 用户
-     * @param key     秘钥Key
+     * @param username 用户名
+     * @param key      秘钥Key
      * @return 检验是否通过
      */
-    boolean checkSecret(Account account, String key);
+    boolean checkSecret(String username, String key);
 }

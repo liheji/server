@@ -6,7 +6,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import top.liheji.server.pojo.Account;
 import top.liheji.server.service.CaptchaService;
 import top.liheji.server.util.CypherUtils;
 import top.liheji.server.util.StringUtils;
@@ -53,17 +52,20 @@ public class CaptchaServiceImpl implements CaptchaService {
         message.setFrom("2820054672@qq.com");
         message.setTo(receiver);
         message.setSentDate(new Date());
-        message.setText(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", genCaptcha(6).toUpperCase()));
+        message.setText(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", genCaptcha(6, receiver)));
         javaMailSender.send(message);
     }
 
     @Override
     public void sendMobileCaptcha(String receiver) {
+        log.info(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", genCaptcha(6, receiver)));
         // 发送手机验证码
     }
 
     @Override
-    public String genCaptcha(int len) {
+    public String genCaptcha(int len, String... prefix) {
+        String pf = String.join(":", prefix);
+
         String code = "";
         Boolean res = false;
         // 生成 redis 不存在的验证码
@@ -74,19 +76,23 @@ public class CaptchaServiceImpl implements CaptchaService {
             }
             //存储到 redis(大小写不敏感)
             code = builder.toString();
-            res = redisTemplate.opsForValue().setIfAbsent("captcha:" + code.toLowerCase(), "", 10 * 60L, TimeUnit.SECONDS);
+            res = redisTemplate.opsForValue().setIfAbsent(
+                    String.format("captcha:%s:%s", pf, code.toLowerCase()),
+                    "",
+                    10 * 60L, TimeUnit.SECONDS
+            );
         }
         return code;
     }
 
     @Override
-    public boolean checkCaptcha(String code) {
+    public boolean checkCaptcha(String code, String... prefix) {
+        String pf = String.join(":", prefix);
         if (code == null) {
             return false;
         }
 
-        String key = "captcha:" + code.toLowerCase();
-
+        String key = String.format("captcha:%s:%s", pf, code.toLowerCase());
         Object obj = redisTemplate.opsForValue().get(key);
         if (obj != null) {
             redisTemplate.delete(key);
@@ -96,7 +102,7 @@ public class CaptchaServiceImpl implements CaptchaService {
     }
 
     @Override
-    public String genSecret(Account account, long expire) {
+    public String genSecret(String username, long expire) {
         //生成秘钥
         String key = "";
         Boolean res = false;
@@ -104,14 +110,14 @@ public class CaptchaServiceImpl implements CaptchaService {
         while (res != null && !res) {
             //存储到 redis
             key = StringUtils.genUuidWithoutLine().toLowerCase();
-            res = redisTemplate.opsForValue().setIfAbsent("secret:" + key, account.getUsername(), expire, TimeUnit.SECONDS);
+            res = redisTemplate.opsForValue().setIfAbsent("secret:" + key, username, expire, TimeUnit.SECONDS);
         }
 
         return key;
     }
 
     @Override
-    public boolean checkSecret(Account account, String code) {
+    public boolean checkSecret(String username, String code) {
         if (code == null) {
             return false;
         }
@@ -121,11 +127,7 @@ public class CaptchaServiceImpl implements CaptchaService {
         if (obj != null) {
             String uname = (String) obj;
             redisTemplate.delete(key);
-            if (account != null) {
-                return account.getUsername().equals(uname);
-            }
-
-            return true;
+            return username == null || username.equals(uname);
         }
 
         return false;

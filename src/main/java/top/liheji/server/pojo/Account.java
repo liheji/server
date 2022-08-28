@@ -6,15 +6,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import top.liheji.server.config.auth.AuthType;
 import top.liheji.server.service.AuthAccountGroupsService;
 import top.liheji.server.service.AuthAccountPermissionsService;
+import top.liheji.server.service.AuthAccountService;
 import top.liheji.server.util.BeanUtils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 系统用户实体
@@ -63,6 +62,9 @@ public class Account implements Serializable {
      * 非数据库字段
      */
     @TableField(exist = false)
+    private List<AuthAccount> authAccounts;
+
+    @TableField(exist = false)
     @JsonIgnore
     private List<AuthGroup> authGroups;
 
@@ -89,15 +91,35 @@ public class Account implements Serializable {
         this.lastLogin = lastLogin;
     }
 
+    public List<AuthAccount> getAuthAccounts() {
+        if (this.id != null) {
+            this.authAccounts = BeanUtils.getBean(AuthAccountService.class).list(
+                    new LambdaQueryWrapper<AuthAccount>()
+                            .eq(AuthAccount::getAccountId, this.id)
+            );
+            // 添加未绑定的数据
+            Set<AuthType> authTypeSet = new HashSet<>(Arrays.asList(AuthType.values()));
+            this.authAccounts.forEach((item) -> authTypeSet.remove(AuthType.getByCode(item.getAuthCode())));
+            authTypeSet.forEach((item) -> {
+                if (item.isEnabled()) {
+                    this.authAccounts.add(new AuthAccount(item));
+                }
+            });
+            // 用户排序
+            this.authAccounts.sort(Comparator.comparingInt(o -> o.getAuthType().length()));
+        }
+        return authAccounts;
+    }
+
     public List<AuthGroup> getAuthGroups() {
-        if (this.authGroups == null && this.id != null) {
+        if (this.id != null) {
             this.authGroups = BeanUtils.getBean(AuthAccountGroupsService.class).selectGroupByAccountId(this.id);
         }
         return authGroups;
     }
 
     public List<AuthPermission> getAuthPermissions() {
-        if (this.authPermissions == null && this.id != null) {
+        if (this.id != null) {
             this.authPermissions = BeanUtils.getBean(AuthAccountPermissionsService.class).selectPermissionByAccountId(this.id);
         }
         return authPermissions;
