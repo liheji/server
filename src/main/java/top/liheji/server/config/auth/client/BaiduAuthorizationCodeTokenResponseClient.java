@@ -2,6 +2,7 @@ package top.liheji.server.config.auth.client;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -20,13 +21,12 @@ import java.util.*;
  * @project : server
  * @description : 使用code交换 access_token的具体逻辑
  */
-public class QQAuthorizationCodeTokenResponseClient implements OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
+public class BaiduAuthorizationCodeTokenResponseClient implements OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
 
     /**
      * 获取用户 access_token 的GET请求参数
      */
-    private static final String TOKEN_PARAMS = "?grant_type=authorization_code&client_id={clientId}&client_secret={clientSecret}&code={code}&redirect_uri={redirectUri}&fmt=json";
-
+    private static final String TOKEN_PARAMS = "?grant_type=authorization_code&client_id={clientId}&client_secret={clientSecret}&code={code}&redirect_uri={redirectUri}";
 
     private RestTemplate restTemplate;
 
@@ -42,7 +42,6 @@ public class QQAuthorizationCodeTokenResponseClient implements OAuth2AccessToken
     public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest authorizationCodeGrantRequest) {
         final ClientRegistration registration = authorizationCodeGrantRequest.getClientRegistration();
         final OAuth2AuthorizationExchange exchange = authorizationCodeGrantRequest.getAuthorizationExchange();
-
         // 根据API文档获取请求 access_token参数
         final String accessTokenUrl = registration.getProviderDetails().getTokenUri() + TOKEN_PARAMS;
         String accessTokenResult = getRestTemplate().getForObject(accessTokenUrl, String.class,
@@ -56,13 +55,12 @@ public class QQAuthorizationCodeTokenResponseClient implements OAuth2AccessToken
             throw new OAuth2AuthenticationException("请求结果为空");
         }
         HashMap accessTokenMap = JSONObject.parseObject(accessTokenResult, HashMap.class);
-        if (accessTokenMap.containsKey("msg") && accessTokenMap.containsKey("code")) {
+        if (accessTokenMap.containsKey("error")) {
             throw new OAuth2AuthenticationException("接口调用返回错误");
         }
         String accessToken = accessTokenMap.get("access_token").toString();
         String refreshToken = accessTokenMap.get("refresh_token").toString();
         long expiresIn = Long.parseLong(accessTokenMap.get("expires_in").toString());
-
         return OAuth2AccessTokenResponse.withToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType(OAuth2AccessToken.TokenType.BEARER)

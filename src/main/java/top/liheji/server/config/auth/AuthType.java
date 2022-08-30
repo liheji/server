@@ -12,9 +12,14 @@ public enum AuthType {
      * 第三方认证的类型枚举
      */
     QQ("qq", "QQ"),
+    Baidu("baidu", "百度"),
+    GitHub("github", "GitHub"),
     Weibo("weibo", "微博", false),
-    WeChat("wechat", "微信", false),
-    GitHub("github", "GitHub");
+    Gitee("gitee", "Gitee", false),
+    Google("google", "谷歌", false),
+    Huawei("huawei", "华为", false),
+    Xiaomi("xiaomi", "小米", false),
+    WeChat("wechat", "微信", false);
 
     private final String code;
     private final String name;

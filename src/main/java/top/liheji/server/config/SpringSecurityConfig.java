@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,14 +26,17 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import top.liheji.server.config.auth.AuthType;
 import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
 import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
 import top.liheji.server.config.auth.remember.impl.CustomTokenRememberMeServices;
 import top.liheji.server.config.auth.client.MultipleAuthorizationCodeTokenResponseClient;
+import top.liheji.server.config.auth.client.BaiduAuthorizationCodeTokenResponseClient;
 import top.liheji.server.config.auth.client.QQAuthorizationCodeTokenResponseClient;
 import top.liheji.server.config.auth.service.MultipleOAuth2UserServiceImpl;
+import top.liheji.server.config.auth.service.BaiduOAuth2UserServiceImpl;
 import top.liheji.server.config.auth.service.QQOAuth2UserServiceImpl;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.util.FileUtils;
@@ -61,16 +65,9 @@ import java.util.Optional;
 @Slf4j
 @Configuration
 @EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
-//@EnableWebSecurity(debug = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private static final String REMEMBER_KEY = StringUtils.genUuid();
-    /**
-     * 非标准的 Oauth2.0 认证注册ID1
-     */
-    public static final String QQ_REGISTRATION_ID = "qq";
-    public static final String WEIBO_REGISTRATION_ID = "weibo";
-    public static final String WECHAT_REGISTRATION_ID = "wechat";
 
     @Autowired
     private CaptchaFilter captchaFilter;
@@ -217,7 +214,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
         MultipleAuthorizationCodeTokenResponseClient client = new MultipleAuthorizationCodeTokenResponseClient();
         // 加入QQ自定义 QQAuthorizationCodeTokenResponseClient
-        client.getMultipleClient().put(QQ_REGISTRATION_ID, new QQAuthorizationCodeTokenResponseClient());
+        client.getMultipleClient().put(AuthType.QQ.getCode(), new QQAuthorizationCodeTokenResponseClient());
+        client.getMultipleClient().put(AuthType.Baidu.getCode(), new BaiduAuthorizationCodeTokenResponseClient());
         return client;
     }
 
@@ -230,7 +228,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
         MultipleOAuth2UserServiceImpl service = new MultipleOAuth2UserServiceImpl();
         // 加入QQ自定义QQOAuth2UserService
-        service.getMultipleService().put(QQ_REGISTRATION_ID, new QQOAuth2UserServiceImpl());
+        service.getMultipleService().put(AuthType.QQ.getCode(), new QQOAuth2UserServiceImpl());
+        service.getMultipleService().put(AuthType.Baidu.getCode(), new BaiduOAuth2UserServiceImpl());
         return service;
     }
 
@@ -288,13 +287,16 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             resp.setContentType("text/html;charset=utf-8");
             // 获取输出信息
             String msg = "";
-            String error = (String) req.getAttribute("error");
             String info = (String) req.getAttribute("info");
-            if (Strings.isNotBlank(info) && Strings.isNotEmpty(info)) {
+            String error = (String) req.getAttribute("error");
+            if (info != null && Strings.isNotEmpty(info.trim())) {
                 msg = String.format("<p style=\"color: #67C23A\">%s</p>", info);
             }
-            if (Strings.isNotBlank(error) && Strings.isNotEmpty(error)) {
+            if (error != null && Strings.isNotEmpty(error.trim())) {
                 msg = String.format("<p style=\"color: #F56C6C\">%s</p>", error);
+            }
+            if (Strings.isEmpty(msg.trim())) {
+                msg = "<p style=\"color: #F56C6C\">第三方认证失败</p>";
             }
             // 输出数据
             resp.getWriter().write(oauth2Html(msg));
@@ -309,7 +311,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private AuthenticationFailureHandler oauth2LoginFailureHandler() {
         return (req, resp, e) -> {
             resp.setContentType("text/html;charset=utf-8");
-            resp.getWriter().write(oauth2Html("<p style=\"color: #F56C6C\"></p>"));
+            resp.getWriter().write(oauth2Html("<p style=\"color: #F56C6C\">第三方认证失败</p>"));
         };
     }
 
@@ -353,6 +355,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      * @return HTML文本
      */
     private String oauth2Html(String msg) {
+        final String path = msg.contains("#67C23A") ? "/#/main/personal" : "/";
         StringBuilder builder = new StringBuilder();
         try {
             File oauth2 = FileUtils.resourceFile("templates", "oauth2.html");
@@ -365,6 +368,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             }
         } catch (Exception ignored) {
         }
-        return String.format(builder.toString(), msg);
+        return String.format(builder.toString(), msg, path);
     }
 }

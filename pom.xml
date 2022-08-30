@@ -145,12 +145,6 @@
             <artifactId>jsch</artifactId>
             <version>0.1.55</version>
         </dependency>
-        <!-- 本地opencv -->
-        <dependency>
-            <groupId>org.opencv</groupId>
-            <artifactId>opencv</artifactId>
-            <version>3.4.6</version>
-        </dependency>
         <!-- 本地 Office文件操作(word,excel,ppt) -->
         <dependency>
             <groupId>com.aspose</groupId>

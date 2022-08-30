@@ -55,17 +55,14 @@ public class MultipleOAuth2UserServiceImpl implements OAuth2UserService<OAuth2Us
                 obj.setName(oAuth2User.getAttribute("nickname"));
                 obj.setAvatarUrl(oAuth2User.getAttribute("figureurl_qq_1"));
                 break;
-            case Weibo:
-                obj.setName(oAuth2User.getAttribute("screen_name"));
-                obj.setAvatarUrl(oAuth2User.getAttribute("avatar_large"));
-                break;
-            case WeChat:
-                obj.setName(oAuth2User.getAttribute("nickname"));
-                obj.setAvatarUrl(oAuth2User.getAttribute("headimgurl"));
-                break;
+            case Gitee:
             case GitHub:
                 obj.setName(oAuth2User.getAttribute("name"));
                 obj.setAvatarUrl(oAuth2User.getAttribute("avatar_url"));
+                break;
+            case Baidu:
+                obj.setName(oAuth2User.getAttribute("username"));
+                obj.setAvatarUrl(oAuth2User.getAttribute("portrait"));
                 break;
             default:
                 throw new DisabledException("暂不支持" + rId + "登录");
