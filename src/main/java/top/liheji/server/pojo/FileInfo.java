@@ -2,6 +2,7 @@ package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -27,6 +28,7 @@ public class FileInfo implements Serializable {
 
     private String fileHash;
 
+    @ApiIgnoreProperty
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 

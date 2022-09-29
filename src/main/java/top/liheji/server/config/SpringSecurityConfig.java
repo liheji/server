@@ -5,12 +5,12 @@ import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -45,9 +45,7 @@ import top.liheji.server.util.StringUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author : Galaxy
@@ -66,6 +64,8 @@ import java.util.Optional;
 @Configuration
 @EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
+    @Value("${debug}")
+    private Boolean debug;
 
     private static final String REMEMBER_KEY = StringUtils.genUuid();
 
@@ -112,6 +112,14 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             }
             return false;
         });
+
+        paramSetFilter.setMatchers("/login*", "/before/**");
+        // 设置用户参数过滤器
+        if (debug) {
+            String[] debugArray = new String[]{"/doc.html*", "/webjars/**", "/swagger*/**", "/v2/**"};
+            paramSetFilter.setMatchers(debugArray);
+            http.authorizeRequests().antMatchers(debugArray).permitAll();
+        }
 
         http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(paramSetFilter, UsernamePasswordAuthenticationFilter.class)

@@ -21,8 +21,8 @@ public class CypherUtils {
      * @param str 需要加密后报文
      * @return 加密字符串
      */
-    public static String encodeToHash(String str, String cypher) {
-        return encodeToHash(str.getBytes(StandardCharsets.UTF_8), cypher);
+    public static String encodeToHash(String str, Algorithms algorithm) {
+        return encodeToHash(str.getBytes(StandardCharsets.UTF_8), algorithm);
     }
 
     /**
@@ -51,17 +51,11 @@ public class CypherUtils {
      * @param bytes 需要加密后报文
      * @return 加密字符串
      */
-    public static String encodeToHash(byte[] bytes, String cypher) {
+    public static String encodeToHash(byte[] bytes, Algorithms algorithm) {
         MessageDigest messageDigest;
-        String encodeStr = "";
-        try {
-            messageDigest = MessageDigest.getInstance(cypher);
-            messageDigest.update(bytes);
-            encodeStr = bytesToString(messageDigest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        return encodeStr;
+        messageDigest = algorithm.messageDigest();
+        messageDigest.update(bytes);
+        return bytesToString(messageDigest.digest());
     }
 
     /**

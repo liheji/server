@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 import top.liheji.server.config.auth.AuthType;
 import top.liheji.server.service.AuthAccountGroupsService;
 import top.liheji.server.service.AuthAccountPermissionsService;
@@ -46,14 +47,18 @@ public class Account implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private Boolean isSuperuser;
 
+    @ApiIgnoreProperty
     private Date lastLogin;
 
+    @ApiIgnoreProperty
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 
+    @ApiIgnoreProperty
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
+    @ApiIgnoreProperty
     @Version
     @TableField(fill = FieldFill.INSERT)
     private Integer version;
@@ -61,13 +66,16 @@ public class Account implements Serializable {
     /**
      * 非数据库字段
      */
+    @ApiIgnoreProperty
     @TableField(exist = false)
     private List<AuthAccount> authAccounts;
 
+    @ApiIgnoreProperty
     @TableField(exist = false)
     @JsonIgnore
     private List<AuthGroup> authGroups;
 
+    @ApiIgnoreProperty
     @TableField(exist = false)
     @JsonIgnore
     private List<AuthPermission> authPermissions;

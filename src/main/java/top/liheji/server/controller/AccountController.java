@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.AuthGroup;
 import top.liheji.server.pojo.AuthPermission;
@@ -45,7 +47,7 @@ public class AccountController {
     public Map<String, Object> changePersonal(String property,
                                               String value,
                                               @RequestParam(required = false) String newPassword,
-                                              @RequestAttribute("account") Account current) {
+                                              @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(2);
         map.put("code", 1);
         boolean execute = true;

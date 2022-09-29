@@ -2,6 +2,9 @@ package top.liheji.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -13,6 +16,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
+import springfox.documentation.annotations.ApiIgnore;
 import top.liheji.server.pojo.*;
 import top.liheji.server.service.*;
 import top.liheji.server.util.*;
@@ -92,7 +96,7 @@ public class AfterController {
     }
 
     @GetMapping("status")
-    public Map<String, Object> status(@RequestAttribute("account") Account current) {
+    public Map<String, Object> status(@ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);
         map.put("code", 0);
         map.put("msg", "OK");
@@ -101,7 +105,7 @@ public class AfterController {
     }
 
     @DeleteMapping("authAccount")
-    public Map<String, Object> deleteAuthAccount(@RequestParam Integer id, @RequestAttribute("account") Account current) {
+    public Map<String, Object> deleteAuthAccount(@RequestParam Integer id, @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "解绑完成");
@@ -120,7 +124,7 @@ public class AfterController {
     }
 
     @GetMapping("permissions")
-    public Map<String, Object> queryPermissions(@RequestAttribute("account") Account current) {
+    public Map<String, Object> queryPermissions(@ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);
 
         map.put("code", 0);
@@ -159,7 +163,7 @@ public class AfterController {
     }
 
     @GetMapping("sendCaptcha")
-    public Map<String, Object> sendCaptcha(String receiver, String property, @RequestAttribute("account") Account current) {
+    public Map<String, Object> sendCaptcha(String receiver, String property, @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 1);
         map.put("msg", "用户不存在");
@@ -197,7 +201,7 @@ public class AfterController {
 
     @GetMapping("socketCaptcha")
     @PreAuthorize("hasAuthority('use_web_socket')")
-    public Map<String, Object> genWebSocketCaptcha(@RequestAttribute("account") Account current) {
+    public Map<String, Object> genWebSocketCaptcha(@ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);
 
         map.put("code", 0);
@@ -209,7 +213,7 @@ public class AfterController {
 
     @GetMapping("registerCaptcha")
     @PreAuthorize("hasAuthority('add_account')")
-    public Map<String, Object> genRegisterCaptcha(@RequestAttribute("account") Account current) {
+    public Map<String, Object> genRegisterCaptcha(@ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(3);
 
         map.put("code", 0);

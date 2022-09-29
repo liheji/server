@@ -2,6 +2,7 @@ package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 import top.liheji.server.service.FileInfoService;
 import top.liheji.server.util.BeanUtils;
 
@@ -38,9 +39,11 @@ public class UploadInfo implements Serializable {
     /**
      * 非数据库字段
      */
+    @ApiIgnoreProperty
     @TableField(exist = false)
     private FileInfo fileInfo;
 
+    @ApiIgnoreProperty
     @TableField(exist = false)
     private Account account;
 

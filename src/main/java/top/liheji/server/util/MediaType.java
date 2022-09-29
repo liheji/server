@@ -1,6 +1,5 @@
 package top.liheji.server.util;
 
-import javax.annotation.Nullable;
 
 /**
  * @author : Galaxy
@@ -1039,7 +1038,7 @@ public enum MediaType {
         return mediaType;
     }
 
-    public static String guessMediaType(@Nullable String fileName) {
+    public static String guessMediaType(String fileName) {
         if (fileName == null) {
             return "application/octet-stream";
         }

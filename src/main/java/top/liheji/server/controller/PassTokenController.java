@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.PassToken;
 import top.liheji.server.service.PassTokenService;
@@ -33,7 +34,7 @@ public class PassTokenController {
     @GetMapping
     @PreAuthorize("hasAuthority('view_pass_token')")
     public Map<String, Object> queryPassToken(Integer page, Integer limit,
-                                              @RequestAttribute("account") Account current,
+                                              @ApiIgnore @RequestAttribute("account") Account current,
                                               @RequestParam(required = false, defaultValue = "") String tokenNote) {
         Page<PassToken> tokenPage = passTokenService.page(
                 new Page<>(page, limit),
@@ -54,7 +55,7 @@ public class PassTokenController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('add_pass_token')")
-    public Map<String, Object> insertPassToken(PassToken passToken, @RequestAttribute("account") Account current) {
+    public Map<String, Object> insertPassToken(PassToken passToken, @ApiIgnore @RequestAttribute("account") Account current) {
         passToken.setTokenKey(StringUtils.genUuidWithoutLine());
         passToken.setAccountId(current.getId());
 
@@ -71,7 +72,7 @@ public class PassTokenController {
     @DeleteMapping
     @PreAuthorize("hasAuthority('delete_pass_token')")
     public Map<String, Object> deletePassToken(@RequestParam List<Integer> tokenIds,
-                                               @RequestAttribute("account") Account current) {
+                                               @ApiIgnore @RequestAttribute("account") Account current) {
 
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
@@ -87,7 +88,7 @@ public class PassTokenController {
 
     @PutMapping
     @PreAuthorize("hasAuthority('change_pass_token')")
-    public Map<String, Object> updatePassToken(PassToken passToken, @RequestAttribute("account") Account current) {
+    public Map<String, Object> updatePassToken(PassToken passToken, @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(2);
         map.put("code", 1);
         map.put("msg", "数据错误");
@@ -107,7 +108,7 @@ public class PassTokenController {
     @PutMapping("lock")
     @PreAuthorize("hasAuthority('change_pass_token')")
     public Map<String, Object> lockPassToken(@RequestParam List<Integer> tokenIds,
-                                             @RequestAttribute("account") Account current) {
+                                             @ApiIgnore @RequestAttribute("account") Account current) {
 
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);

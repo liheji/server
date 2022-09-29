@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.rememberme.InvalidCookieException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.PassToken;
@@ -37,7 +38,7 @@ public class ParamSetFilter extends OncePerRequestFilter {
 
     private String cookieName = "sessionid";
 
-    private String[] matchers;
+    private List<String> matchers;
 
     @Autowired
     private AccountService accountService;
@@ -48,8 +49,10 @@ public class ParamSetFilter extends OncePerRequestFilter {
     @Autowired
     private PersistentLoginsService persistentLoginsService;
 
+
+    public static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
     public ParamSetFilter() {
-        setMatchers("/login", "/before");
     }
 
     @Override
@@ -152,14 +155,18 @@ public class ParamSetFilter extends OncePerRequestFilter {
     }
 
     public void setMatchers(String... matchers) {
-        this.matchers = matchers;
+        this.matchers = Arrays.asList(matchers);
+    }
+
+    public void addMatchers(String... matchers) {
+        this.matchers.addAll(Arrays.asList(matchers));
     }
 
     public boolean requiresSetParam(HttpServletRequest request) {
         String uri = request.getRequestURI();
         if (this.matchers != null) {
             for (String str : this.matchers) {
-                if (uri.startsWith(str)) {
+                if (PATH_MATCHER.match(str, uri)) {
                     return false;
                 }
             }

@@ -50,21 +50,21 @@ public class FileUtils {
         //为读取文件提供流通道
         @Cleanup InputStream in = file.getInputStream();
         @Cleanup OutputStream out = new FileOutputStream(f);
-        MessageDigest digestMd5 = MessageDigest.getInstance("MD5");
-        MessageDigest digestSSha256 = MessageDigest.getInstance("SHA-256");
+        MessageDigest digestMd5 = Algorithms.MD5.messageDigest();
+        MessageDigest digestSha256 = Algorithms.SHA_256.messageDigest();
 
         int num;
         byte[] bytes = new byte[1024];
         while ((num = in.read(bytes)) != -1) {
             out.write(bytes, 0, num);
             digestMd5.update(bytes, 0, num);
-            digestSSha256.update(bytes, 0, num);
+            digestSha256.update(bytes, 0, num);
         }
 
         return new FileInfo(
                 f.getName(),
                 file.getSize(),
-                CypherUtils.bytesToString(digestMd5.digest()) + CypherUtils.bytesToString(digestSSha256.digest())
+                CypherUtils.bytesToString(digestMd5.digest()) + CypherUtils.bytesToString(digestSha256.digest())
         );
     }
 

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 import top.liheji.server.service.AuthGroupPermissionsService;
 import top.liheji.server.util.BeanUtils;
 
@@ -38,7 +39,7 @@ public class AuthPermission implements Serializable {
     /**
      * 非数据库字段
      */
-
+    @ApiIgnoreProperty
     @TableField(exist = false)
     @JsonIgnore
     private List<AuthGroup> authGroups;

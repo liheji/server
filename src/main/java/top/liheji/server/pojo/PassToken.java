@@ -3,6 +3,7 @@ package top.liheji.server.pojo;
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 import top.liheji.server.service.AccountService;
 import top.liheji.server.util.BeanUtils;
 
@@ -30,12 +31,15 @@ public class PassToken implements Serializable {
 
     private Date expireTime;
 
+    @ApiIgnoreProperty
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 
+    @ApiIgnoreProperty
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
+    @ApiIgnoreProperty
     @Version
     @TableField(fill = FieldFill.INSERT)
     private Integer version;
@@ -47,10 +51,11 @@ public class PassToken implements Serializable {
     /**
      * 非数据库字段
      */
-
+    @ApiIgnoreProperty
     @TableField(exist = false)
     private Long expireStamp;
 
+    @ApiIgnoreProperty
     @TableField(exist = false)
     @JsonIgnore
     private Account account;

@@ -3,6 +3,7 @@ package top.liheji.server.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.PersistentDevices;
 import top.liheji.server.service.PersistentDevicesService;
@@ -31,7 +32,7 @@ public class DeviceController {
 
     @GetMapping
     public Map<String, Object> queryDevice(@RequestAttribute("series") String series,
-                                           @RequestAttribute("account") Account current) {
+                                           @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         List<PersistentDevices> devicesList = persistentDevicesService.list(
                 new LambdaQueryWrapper<PersistentDevices>()
@@ -52,7 +53,7 @@ public class DeviceController {
     public Map<String, Object> changeDevice(String tp,
                                             HttpSession session,
                                             @RequestAttribute("series") String series,
-                                            @RequestAttribute("account") Account current) {
+                                            @ApiIgnore @RequestAttribute("account") Account current) {
         PersistentDevices persistentDevices = persistentDevicesService.getOne(
                 new LambdaQueryWrapper<PersistentDevices>()
                         .eq(PersistentDevices::getType, tp)

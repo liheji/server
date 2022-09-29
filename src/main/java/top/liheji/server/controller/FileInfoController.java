@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import springfox.documentation.annotations.ApiIgnore;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.FileInfo;
 import top.liheji.server.pojo.UploadInfo;
@@ -48,7 +49,7 @@ public class FileInfoController {
     @GetMapping
     @PreAuthorize("hasAuthority('view_file_info')")
     public Map<String, Object> queryFileInfo(Integer page, Integer limit,
-                                             @RequestAttribute("account") Account current,
+                                             @ApiIgnore @RequestAttribute("account") Account current,
                                              @RequestParam(required = false, defaultValue = "") String fileName) {
         Page<UploadInfo> uploadInfoPage = uploadInfoService.page(
                 new Page<>(page, limit),
@@ -68,7 +69,7 @@ public class FileInfoController {
 
     @DeleteMapping
     @PreAuthorize("hasAuthority('delete_file_info')")
-    public Map<String, Object> deleteFileInfo(@RequestParam List<Integer> fileIds, @RequestAttribute("account") Account current) {
+    public Map<String, Object> deleteFileInfo(@RequestParam List<Integer> fileIds, @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 0);
         map.put("msg", "删除完成");
@@ -86,7 +87,7 @@ public class FileInfoController {
     public Map<String, Object> checkFileInfo(Long fileSize,
                                              String fileHash,
                                              String fileName,
-                                             @RequestAttribute("account") Account current) {
+                                             @ApiIgnore @RequestAttribute("account") Account current) {
         Map<String, Object> map = new HashMap<>(4);
         map.put("code", 1);
         map.put("msg", "OK");
@@ -125,7 +126,7 @@ public class FileInfoController {
     @PreAuthorize("hasAuthority('add_file_info')")
     public Map<String, Object> addFileInfo(@RequestParam("file") MultipartFile file,
                                            @RequestHeader(value = "UPLOAD-TOKEN", defaultValue = "") String uToken,
-                                           @RequestAttribute("account") Account current) throws Exception {
+                                           @ApiIgnore @RequestAttribute("account") Account current) throws Exception {
         Map<String, Object> map = new HashMap<>(4);
 
         if (!captchaService.checkSecret(current.getUsername(), uToken)) {
@@ -153,7 +154,7 @@ public class FileInfoController {
     @PreAuthorize("hasAuthority('download_file_info')")
     public void downloadFile(@PathVariable String param,
                              @RequestHeader(value = "Range", defaultValue = "") String range,
-                             @RequestAttribute("account") Account current,
+                             @ApiIgnore @RequestAttribute("account") Account current,
                              HttpServletResponse resp) throws IOException {
 
         LambdaQueryWrapper<UploadInfo> wrapper = new LambdaQueryWrapper<UploadInfo>()
@@ -166,14 +167,10 @@ public class FileInfoController {
         }
 
         List<UploadInfo> uploadInfoList = uploadInfoService.list(wrapper);
-        if (uploadInfoList.size() <= 0) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
-        UploadInfo uploadInfo = uploadInfoList.get(0);
-
+        final String uploadFileName = (uploadInfoList.size() <= 0) ? param.trim() : uploadInfoList.get(0).getFileName();
+        String fileName = (uploadInfoList.size() <= 0) ? param.trim() : uploadInfoList.get(0).getFileInfo().getFileName();
         //get方式提交的
-        File file = FileUtils.staticFile("uploads", uploadInfo.getFileInfo().getFileName());
+        File file = FileUtils.staticFile("uploads", fileName);
         if (!file.exists()) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -206,7 +203,7 @@ public class FileInfoController {
         resp.setHeader("Accept-Ranges", "bytes");
         resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         resp.setHeader("Content-Disposition",
-                "attachment;filename=" + URLEncoder.encode(uploadInfo.getFileName(), "UTF-8"));
+                "attachment;filename=" + URLEncoder.encode(uploadFileName, "UTF-8"));
         resp.setHeader("Content-Length", String.valueOf(contentLength));
         resp.setHeader("Content-Range", String.format("bytes %d-%d/%d", startPos, endPos, fSize));
         resp.setHeader("Content-Type", "application/octet-stream");
@@ -230,7 +227,7 @@ public class FileInfoController {
     @GetMapping("preview/{param:.+}")
     @PreAuthorize("hasAuthority('download_file_info')")
     public void previewFile(@PathVariable String param,
-                            @RequestAttribute("account") Account current,
+                            @ApiIgnore @RequestAttribute("account") Account current,
                             HttpServletResponse resp) throws Exception {
         param = param == null ? "" : param;
 
@@ -244,14 +241,10 @@ public class FileInfoController {
         }
 
         List<UploadInfo> uploadInfoList = uploadInfoService.list(wrapper);
-        if (uploadInfoList.size() <= 0) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
-        UploadInfo uploadInfo = uploadInfoList.get(0);
-
+        final String uploadFileName = (uploadInfoList.size() <= 0) ? param.trim() : uploadInfoList.get(0).getFileName();
+        final String fileName = (uploadInfoList.size() <= 0) ? param.trim() : uploadInfoList.get(0).getFileInfo().getFileName();
         //get方式提交的
-        File file = FileUtils.staticFile("uploads", uploadInfo.getFileInfo().getFileName());
+        File file = FileUtils.staticFile("uploads", fileName);
         if (!file.exists()) {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -281,14 +274,14 @@ public class FileInfoController {
         if (Pattern.matches(".*\\.(doc|xls|ppt)x?$", file.getName())) {
             resp.setHeader("Content-Type", "application/pdf");
             resp.setHeader("Content-Disposition",
-                    "filename=" + URLEncoder.encode(uploadInfo.getFileName() + ".pdf", "UTF-8"));
+                    "filename=" + URLEncoder.encode(uploadFileName + ".pdf", "UTF-8"));
             AsposeUtils.transToPdf(file.getAbsolutePath(), out);
             in.close();
         } else {
             resp.setHeader("Content-Type", contentType);
             resp.setHeader("Content-Length", String.valueOf(file.length()));
             resp.setHeader("Content-Disposition",
-                    "filename=" + URLEncoder.encode(uploadInfo.getFileName(), "UTF-8"));
+                    "filename=" + URLEncoder.encode(uploadFileName, "UTF-8"));
 
             int len = 0;
             byte[] bytes = new byte[1024];

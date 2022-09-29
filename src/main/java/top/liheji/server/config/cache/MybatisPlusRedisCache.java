@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.cache.Cache;
 import org.springframework.data.redis.connection.RedisServerCommands;
 import org.springframework.data.redis.core.RedisTemplate;
+import top.liheji.server.util.Algorithms;
 import top.liheji.server.util.CypherUtils;
 import top.liheji.server.util.BeanUtils;
 
@@ -49,7 +50,7 @@ public class MybatisPlusRedisCache implements Cache {
         checkTemplate();
         try {
             //将key加密后存入
-            redisTemplate.opsForHash().put(this.id, CypherUtils.encodeToHash(key.toString(), "SHA-256"), value);
+            redisTemplate.opsForHash().put(this.id, CypherUtils.encodeToHash(key.toString(), Algorithms.SHA_256), value);
         } catch (Exception e) {
             log.error(this.id + " 保存数据到Redis缓存错误，信息：" + e);
         }
@@ -60,7 +61,7 @@ public class MybatisPlusRedisCache implements Cache {
         checkTemplate();
         try {
             if (key != null) {
-                return redisTemplate.opsForHash().get(this.id, CypherUtils.encodeToHash(key.toString(), "SHA-256"));
+                return redisTemplate.opsForHash().get(this.id, CypherUtils.encodeToHash(key.toString(), Algorithms.SHA_256));
             }
         } catch (Exception e) {
             log.error(this.id + " 获取Redis缓存数据错误，信息：" + e);
@@ -73,7 +74,7 @@ public class MybatisPlusRedisCache implements Cache {
         checkTemplate();
         try {
             if (key != null) {
-                redisTemplate.opsForHash().delete(this.id, CypherUtils.encodeToHash(key.toString(), "SHA-256"));
+                redisTemplate.opsForHash().delete(this.id, CypherUtils.encodeToHash(key.toString(), Algorithms.SHA_256));
             }
         } catch (Exception e) {
             log.error(this.id + " 移除Redis缓存数据错误，信息：" + e);

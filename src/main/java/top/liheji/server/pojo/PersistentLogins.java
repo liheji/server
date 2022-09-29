@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 
 import java.io.Serializable;
 import java.util.Date;

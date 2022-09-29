@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import top.liheji.server.config.auth.AuthType;
+import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 import top.liheji.server.service.AccountService;
 import top.liheji.server.util.BeanUtils;
 
@@ -53,9 +54,11 @@ public class AuthAccount implements Serializable {
     @TableField(exist = false)
     private static final long serialVersionUID = -6471191841884811150L;
 
+    @ApiIgnoreProperty
     @TableField(exist = false)
     private String authType;
 
+    @ApiIgnoreProperty
     @TableField(exist = false)
     @JsonIgnore
     private Account account;
