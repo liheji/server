@@ -149,13 +149,12 @@ public class BeforeController {
     }
 
     @PostMapping("cdn")
-    public void cdn(@RequestParam("file") MultipartFile file,
-                    @RequestHeader("X-TOKEN") String xToken,
-                    HttpServletResponse resp) throws Exception {
+    public void cdnPost(@RequestParam("file") MultipartFile file, @RequestHeader("AUTH-TOKEN") String xToken,
+                       HttpServletResponse resp) throws Exception {
         final String basePath = "/usr/local/cdn";
-        final String passToken = "31c5f0e626b84a118302496b126d8fd7";
+        final String passToken = "217d65b63a22401a810a0442492a5f4e";
         if (!passToken.equals(xToken)) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -183,6 +182,41 @@ public class BeforeController {
         map.put("code", 0);
         map.put("msg", "OK");
         map.put("url", save.getAbsolutePath().replace(basePath, ""));
+
+        PrintWriter out = resp.getWriter();
+        out.write(JSONObject.toJSONString(map));
+        out.flush();
+        out.close();
+    }
+
+    @DeleteMapping("cdn")
+    public void cdnDelete(@RequestHeader("AUTH-TOKEN") String xToken, String filename,
+                          HttpServletResponse resp) throws Exception {
+        final String basePath = "/usr/local/cdn";
+        final String passToken = "217d65b63a22401a810a0442492a5f4e";
+        if (!passToken.equals(xToken)) {
+            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        File save = new File(basePath, MediaType.guessMediaType(filename).split("/")[0]);
+        if (save.isFile() || !save.exists()) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        }
+        save = new File(save, filename);
+        if (!save.exists()) {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        }
+
+        //为读取文件提供流通道
+        resp.setContentType("application/json;charset=utf-8");
+        Map<String, Object> map = new HashMap<>(4);
+        map.put("code", 0);
+        map.put("msg", "OK");
+        if (!save.delete()) {
+            map.put("code", 1);
+            map.put("msg", "FAIL");
+        }
 
         PrintWriter out = resp.getWriter();
         out.write(JSONObject.toJSONString(map));

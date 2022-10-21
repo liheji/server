@@ -3,7 +3,6 @@ package top.liheji.server.config;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -113,11 +112,11 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             return false;
         });
 
-        paramSetFilter.setMatchers("/login*", "/before/**");
+        paramSetFilter.setExcludeMatchers("/login*", "/before/**");
         // 设置用户参数过滤器
         if (debug) {
             String[] debugArray = new String[]{"/doc.html*", "/webjars/**", "/swagger*/**", "/v2/**"};
-            paramSetFilter.setMatchers(debugArray);
+            paramSetFilter.addExcludeMatchers(debugArray);
             http.authorizeRequests().antMatchers(debugArray).permitAll();
         }
 
@@ -294,20 +293,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         return (req, resp, authentication) -> {
             resp.setContentType("text/html;charset=utf-8");
             // 获取输出信息
-            String msg = "";
             String info = (String) req.getAttribute("info");
             String error = (String) req.getAttribute("error");
-            if (info != null && Strings.isNotEmpty(info.trim())) {
-                msg = String.format("<p style=\"color: #67C23A\">%s</p>", info);
+            if (!StringUtils.isEmpty(error)) {
+                resp.getWriter().write(oauth2Html(error, false));
+            } else if (!StringUtils.isEmpty(info)) {
+                resp.getWriter().write(oauth2Html(info, true));
+            } else {
+                resp.getWriter().write(oauth2Html("第三方认证失败", false));
             }
-            if (error != null && Strings.isNotEmpty(error.trim())) {
-                msg = String.format("<p style=\"color: #F56C6C\">%s</p>", error);
-            }
-            if (Strings.isEmpty(msg.trim())) {
-                msg = "<p style=\"color: #F56C6C\">第三方认证失败</p>";
-            }
-            // 输出数据
-            resp.getWriter().write(oauth2Html(msg));
         };
     }
 
@@ -319,7 +313,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private AuthenticationFailureHandler oauth2LoginFailureHandler() {
         return (req, resp, e) -> {
             resp.setContentType("text/html;charset=utf-8");
-            resp.getWriter().write(oauth2Html("<p style=\"color: #F56C6C\">第三方认证失败</p>"));
+            resp.getWriter().write(oauth2Html("第三方认证失败", false));
         };
     }
 
@@ -359,11 +353,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     /**
      * 拼接返回的HTML
      *
-     * @param msg 信息
+     * @param msg    信息
+     * @param toMain 是否去主页
      * @return HTML文本
      */
-    private String oauth2Html(String msg) {
-        final String path = msg.contains("#67C23A") ? "/#/main/personal" : "/";
+    private String oauth2Html(String msg, boolean toMain) {
+        final String path = toMain ? "/#/main/personal" : "/#/login?msg=" + msg;
         StringBuilder builder = new StringBuilder();
         try {
             File oauth2 = FileUtils.resourceFile("templates", "oauth2.html");
@@ -376,6 +371,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             }
         } catch (Exception ignored) {
         }
-        return String.format(builder.toString(), msg, path);
+        return String.format(builder.toString(), path);
     }
 }

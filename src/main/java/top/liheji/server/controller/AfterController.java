@@ -2,12 +2,8 @@ package top.liheji.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +21,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -241,33 +236,6 @@ public class AfterController {
             map.put("code", 0);
             map.put("msg", "格式化完成");
             map.put("fileName", genFile.getName());
-        }
-
-        return map;
-    }
-
-    @PostMapping("upload")
-    @ResponseBody
-    public Map<String, Object> uploadToBlog(@RequestParam("file") MultipartFile[] files,
-                                            String prefix) throws Exception {
-        Map<String, Object> map = new HashMap<>(2);
-        map.put("code", 0);
-        map.put("msg", "上传成功");
-        String[] items = new String[]{""};
-        if (prefix != null) {
-            items = prefix.split("[/\\\\]+");
-        }
-        File baseFile = Paths.get("/usr/local/blog/source/_posts", items).toFile();
-        if (!baseFile.exists()) {
-            baseFile.mkdirs();
-        }
-        //上传文件
-        for (MultipartFile file : files) {
-            String fileName = file.getOriginalFilename();
-            assert fileName != null;
-            @Cleanup InputStream in = file.getInputStream();
-            @Cleanup OutputStream out = new FileOutputStream(new File(baseFile, fileName));
-            IOUtils.copy(in, out);
         }
 
         return map;

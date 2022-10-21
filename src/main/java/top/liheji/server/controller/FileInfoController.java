@@ -16,6 +16,7 @@ import top.liheji.server.service.FileInfoService;
 import top.liheji.server.service.UploadInfoService;
 import top.liheji.server.util.AsposeUtils;
 import top.liheji.server.util.FileUtils;
+import top.liheji.server.util.MediaType;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -250,7 +251,7 @@ public class FileInfoController {
             return;
         }
 
-        String contentType = FileUtils.guessMediaType(file);
+        String contentType = MediaType.guessMediaType(file.getName());
         if (Pattern.matches("^(text|video|audio|image)/.*", contentType) ||
                 Pattern.matches("application/.*(script|json|pdf|xml)", contentType) ||
                 Pattern.matches(".*\\.(doc|xls|ppt)x?$", file.getName())) {

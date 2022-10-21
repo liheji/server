@@ -31,6 +31,11 @@ public class AutoFillHandler implements MetaObjectHandler {
      */
     private static final String FIELD_LAST_USED = "lastUsed";
 
+    /**
+     * LatexAccount 是否有人在使用
+     */
+    private static final String FIELD_IS_AVAILABLE = "isAvailable";
+
     //公共字段
     /**
      * 更新时间字段
@@ -66,6 +71,10 @@ public class AutoFillHandler implements MetaObjectHandler {
 
         if (metaObject.hasSetter(FIELD_LAST_USED)) {
             this.strictInsertFill(metaObject, FIELD_LAST_USED, Date.class, currentTime);
+        }
+
+        if (metaObject.hasSetter(FIELD_IS_AVAILABLE)) {
+            this.strictInsertFill(metaObject, FIELD_IS_AVAILABLE, Boolean.class, true);
         }
 
         //公共字段

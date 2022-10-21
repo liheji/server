@@ -6,6 +6,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import top.liheji.server.service.CaptchaService;
 
@@ -15,8 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -34,17 +34,41 @@ public class CaptchaFilter extends OncePerRequestFilter {
 
     private String captchaParameter = "captcha";
 
-    private String[] matchers;
+    private List<String> matchers;
+
+    private List<String> excludeMatchers;
 
     private Function<HttpServletRequest, Boolean> otherMatcherFunction;
 
     private Function<HttpServletRequest, Boolean> excludeMatcherFunction;
 
+    public static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
     public CaptchaFilter() {
     }
 
     public void setMatchers(String... matchers) {
-        this.matchers = matchers;
+        this.matchers = new ArrayList<>();
+        this.matchers.addAll(Arrays.asList(matchers));
+    }
+
+    public void addMatchers(String... matchers) {
+        if (this.matchers == null) {
+            this.matchers = new ArrayList<>(matchers.length);
+        }
+        this.matchers.addAll(Arrays.asList(matchers));
+    }
+
+    public void setExcludeMatchers(String... excludeMatchers) {
+        this.excludeMatchers = new ArrayList<>();
+        this.excludeMatchers.addAll(Arrays.asList(excludeMatchers));
+    }
+
+    public void addExcludeMatchers(String... excludeMatchers) {
+        if (this.excludeMatchers == null) {
+            this.excludeMatchers = new ArrayList<>(excludeMatchers.length);
+        }
+        this.excludeMatchers.addAll(Arrays.asList(excludeMatchers));
     }
 
     public void setCaptchaParameter(String captchaParameter) {
@@ -87,7 +111,7 @@ public class CaptchaFilter extends OncePerRequestFilter {
     }
 
     private void attemptAuthentication(HttpServletRequest request) throws AuthenticationException {
-        if ((requiresCaptcha(request) || otherRequireCaptcha(request)) && !excludeRequireCaptcha(request)) {
+        if (requiresCaptcha(request) && !excludeRequireCaptcha(request)) {
             String captcha = obtainCaptcha(request);
 
             if (captcha == null) {
@@ -105,27 +129,42 @@ public class CaptchaFilter extends OncePerRequestFilter {
         return request.getParameter(this.captchaParameter);
     }
 
+    /**
+     * 匹配规则（函数相对排除规则滞后）
+     *
+     * @param request 请求体
+     * @return 是否匹配
+     */
     private boolean requiresCaptcha(HttpServletRequest request) {
         String uri = request.getRequestURI();
         if (this.matchers != null) {
             for (String str : this.matchers) {
-                if (uri.startsWith(str)) {
+                if (PATH_MATCHER.match(str, uri)) {
                     return true;
                 }
             }
         }
-
-        return false;
-    }
-
-    private boolean otherRequireCaptcha(HttpServletRequest request) {
         if (this.otherMatcherFunction != null) {
             return this.otherMatcherFunction.apply(request);
         }
         return false;
     }
 
+    /**
+     * 排除规则（函数相对匹配规则优先）
+     *
+     * @param request 请求体
+     * @return 是否排除
+     */
     private boolean excludeRequireCaptcha(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (this.excludeMatchers != null) {
+            for (String str : this.excludeMatchers) {
+                if (PATH_MATCHER.match(str, uri)) {
+                    return true;
+                }
+            }
+        }
         if (this.excludeMatcherFunction != null) {
             return this.excludeMatcherFunction.apply(request);
         }

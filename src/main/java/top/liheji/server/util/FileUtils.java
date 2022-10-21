@@ -2,8 +2,6 @@ package top.liheji.server.util;
 
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.jmimemagic.Magic;
-import net.sf.jmimemagic.MagicMatch;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 import top.liheji.server.pojo.FileInfo;
@@ -181,41 +179,6 @@ public class FileUtils {
         }
 
         return resFile;
-    }
-
-    /**
-     * 获取文件MimeType
-     *
-     * @param file 文件
-     * @return 文件的 MimeType
-     */
-    public static String guessMediaType(File file) {
-        String contentType = MediaType.guessMediaType(file.getName());
-        if ("application/octet-stream".equals(contentType)) {
-            contentType = magicGuessFileMediaType(file);
-        }
-        return contentType;
-    }
-
-    /**
-     * 获取文件MimeType
-     *
-     * @param file 文件
-     * @return 文件的 MimeType
-     */
-    private static String magicGuessFileMediaType(File file) {
-        String contentType = "";
-        try {
-            MagicMatch match = Magic.getMagicMatch(file, false);
-            contentType = match.getMimeType();
-        } catch (Exception e) {
-            log.warn(e.toString());
-        } finally {
-            if ("".equals(contentType)) {
-                contentType = "application/octet-stream";
-            }
-        }
-        return contentType;
     }
 
     /**

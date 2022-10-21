@@ -1,5 +1,6 @@
 package top.liheji.server.util;
 
+import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -10,12 +11,12 @@ import java.util.UUID;
  * @description : 字符串工具类
  */
 public class StringUtils {
-    private static final String[] UUID_CHARS = {"a", "b", "c", "d", "e", "f",
-            "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
-            "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5",
-            "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I",
-            "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
-            "W", "X", "Y", "Z"};
+    private static final char[] UUID_CHARS = {'a', 'b', 'c', 'd', 'e', 'f',
+            'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+            't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5',
+            '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+            'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+            'W', 'X', 'Y', 'Z'};
 
     /**
      * 获取一个去掉横线的UUID字符串
@@ -47,6 +48,32 @@ public class StringUtils {
             String sub = uid.substring(i * 4, i * 4 + 4);
             int x = Integer.parseInt(sub, 16);
             result.append(UUID_CHARS[x % 0x3E]);
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * 生成一个随机字符串（字母或下划线开头）
+     *
+     * @param len 字符串长度
+     * @return 生成的字符串
+     */
+    public static String genRandString(int len) {
+        Random random = new Random();
+
+        StringBuilder result = new StringBuilder();
+        // 生成第一个字符
+        while (true) {
+            char chr = UUID_CHARS[random.nextInt(UUID_CHARS.length)];
+            if (Character.isLetter(chr)) {
+                result.append(chr);
+                break;
+            }
+        }
+        // 继续放入剩下的字符
+        for (int i = 1; i < len; i++) {
+            result.append(UUID_CHARS[random.nextInt(UUID_CHARS.length)]);
         }
 
         return result.toString();

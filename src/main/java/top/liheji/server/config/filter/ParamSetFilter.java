@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * @author : Galaxy
@@ -38,7 +39,9 @@ public class ParamSetFilter extends OncePerRequestFilter {
 
     private String cookieName = "sessionid";
 
-    private List<String> matchers;
+    private List<String> excludeMatchers;
+
+    private Function<HttpServletRequest, Boolean> excludeMatcherFunction;
 
     @Autowired
     private AccountService accountService;
@@ -57,7 +60,7 @@ public class ParamSetFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        if (!requiresSetParam(request)) {
+        if (excludeRequiresSetParam(request)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -154,24 +157,43 @@ public class ParamSetFilter extends OncePerRequestFilter {
         this.tokenName = tokenName;
     }
 
-    public void setMatchers(String... matchers) {
-        this.matchers = Arrays.asList(matchers);
+    public void setExcludeMatchers(String... excludeMatchers) {
+        this.excludeMatchers = new ArrayList<>();
+        this.excludeMatchers.addAll(Arrays.asList(excludeMatchers));
     }
 
-    public void addMatchers(String... matchers) {
-        this.matchers.addAll(Arrays.asList(matchers));
+    public void addExcludeMatchers(String... excludeMatchers) {
+        if (this.excludeMatchers == null) {
+            this.excludeMatchers = new ArrayList<>();
+        }
+        this.excludeMatchers.addAll(Arrays.asList(excludeMatchers));
     }
 
-    public boolean requiresSetParam(HttpServletRequest request) {
+    public void setExcludeMatcherFunction(Function<HttpServletRequest, Boolean> excludeMatcherFunction) {
+        this.excludeMatcherFunction = excludeMatcherFunction;
+    }
+
+
+    /**
+     * 排除规则
+     *
+     * @param request 请求体
+     * @return 是否排除
+     */
+    public boolean excludeRequiresSetParam(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        if (this.matchers != null) {
-            for (String str : this.matchers) {
+        if (this.excludeMatchers != null) {
+            for (String str : this.excludeMatchers) {
                 if (PATH_MATCHER.match(str, uri)) {
-                    return false;
+                    return true;
                 }
             }
         }
 
-        return true;
+        if (this.excludeMatcherFunction != null) {
+            return this.excludeMatcherFunction.apply(request);
+        }
+
+        return false;
     }
 }
