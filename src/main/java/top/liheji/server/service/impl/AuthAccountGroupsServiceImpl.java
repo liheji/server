@@ -20,12 +20,12 @@ public class AuthAccountGroupsServiceImpl extends ServiceImpl<AuthAccountGroupsM
         implements AuthAccountGroupsService {
 
     @Override
-    public List<Account> selectAccountByGroupId(Integer groupId) {
+    public List<Account> getAccountByGroupId(Long groupId) {
         return baseMapper.selectAccountByGroupId(groupId);
     }
 
     @Override
-    public List<AuthGroup> selectGroupByAccountId(Integer accountId) {
+    public List<AuthGroup> getGroupByAccountId(Long accountId) {
         return baseMapper.selectGroupByAccountId(accountId);
     }
 }

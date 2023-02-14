@@ -7,7 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.lang.Nullable;
-import top.liheji.server.pojo.other.Course;
+import top.liheji.server.vo.CourseVo;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +46,7 @@ public class HrbeuUtils {
         Workbook wk = new Workbook();
         Cells cells = wk.getWorksheets().get(0).getCells();
 
-        List<Course> sourceCourses;
+        List<CourseVo> sourceCourses;
         if (name.endsWith(".html")) {
             sourceCourses = genCourseListByHtml(in);
         } else if (name.endsWith(".xls") || name.endsWith(".xlsx")) {
@@ -61,7 +61,7 @@ public class HrbeuUtils {
         }
 
         int i = 1;
-        for (Course course : sourceCourses) {
+        for (CourseVo course : sourceCourses) {
             writeData = new String[]{
                     course.getName(),
                     course.getDay().toString(),
@@ -79,7 +79,7 @@ public class HrbeuUtils {
             i++;
         }
 
-        File newFile = FileUtils.genNoRepeatFile(".csv", "uploads");
+        File newFile = FileUtils.getUniqueFile(".csv", "uploads");
         wk.save(newFile.getAbsolutePath(), com.aspose.cells.SaveFormat.CSV);
 
         //定时删除生成的文件课表文件
@@ -95,8 +95,8 @@ public class HrbeuUtils {
      * @return 处理好的课程列表
      * @throws Exception 异常
      */
-    private static @NonNull List<Course> genCourseListByXls(InputStream fis) throws Exception {
-        List<Course> courseList = new ArrayList<>();
+    private static @NonNull List<CourseVo> genCourseListByXls(InputStream fis) throws Exception {
+        List<CourseVo> courseList = new ArrayList<>();
 
         License li = new License();
         li.setLicense();
@@ -141,9 +141,9 @@ public class HrbeuUtils {
      * @return 处理好的课程列表
      * @throws Exception 异常
      */
-    private static @NonNull List<Course> genCourseListByHtml(InputStream fis) throws Exception {
+    private static @NonNull List<CourseVo> genCourseListByHtml(InputStream fis) throws Exception {
         //格式化
-        List<Course> courseList = new ArrayList<>();
+        List<CourseVo> courseList = new ArrayList<>();
 
         //读取 html文件
         @Cleanup InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
@@ -191,8 +191,8 @@ public class HrbeuUtils {
      * @param countDay 当前日期（周一 ~ 周日）
      * @return 处理好的课程列表(如果一把多师或日期不连续则有多个)
      */
-    private static @NonNull List<Course> parseCourseInfo(List<String> split, int countDay) {
-        List<Course> resCourseList = new ArrayList<>();
+    private static @NonNull List<CourseVo> parseCourseInfo(List<String> split, int countDay) {
+        List<CourseVo> resCourseList = new ArrayList<>();
 
         //去除类型词
         List<String> splitEnd = new ArrayList<>();
@@ -222,7 +222,7 @@ public class HrbeuUtils {
                     teachMatcher.find();
                     String teacher = teachMatcher.group(1);
                     resCourseList.add(
-                            new Course(
+                            new CourseVo(
                                     splitEnd.get(0),
                                     countDay,
                                     splitEnd.get(4),
@@ -243,7 +243,7 @@ public class HrbeuUtils {
                 String startWeek = itMatcher.group(1).trim();
                 String endWeek = (itMatcher.group(3) == null || "".equals(itMatcher.group(3).trim())) ? itMatcher.group(1) : itMatcher.group(3);
                 resCourseList.add(
-                        new Course(
+                        new CourseVo(
                                 splitEnd.get(0),
                                 countDay,
                                 splitEnd.get(4),

@@ -7,9 +7,9 @@
     <cache-ref namespace="top.liheji.server.mapper.AuthGroupPermissionsMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthGroupPermissions">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="groupId" column="group_id" jdbcType="INTEGER"/>
-        <result property="permissionId" column="permission_id" jdbcType="INTEGER"/>
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="permissionId" column="permission_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">

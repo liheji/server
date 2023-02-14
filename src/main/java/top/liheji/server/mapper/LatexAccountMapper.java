@@ -2,7 +2,7 @@ package top.liheji.server.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.CacheNamespace;
-import top.liheji.server.config.cache.MybatisPlusRedisCache;
+import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.LatexAccount;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 

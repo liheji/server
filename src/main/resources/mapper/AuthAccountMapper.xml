@@ -7,12 +7,12 @@
     <cache-ref namespace="top.liheji.server.mapper.AuthAccountMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthAccount">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="openId" column="open_id" jdbcType="VARCHAR"/>
-        <result property="name" column="name" jdbcType="VARCHAR"/>
-        <result property="avatarUrl" column="avatar_url" jdbcType="VARCHAR"/>
-        <result property="authCode" column="auth_code" jdbcType="VARCHAR"/>
-        <result property="accountId" column="account_id" jdbcType="INTEGER"/>
+        <id property="id" column="id"/>
+        <result property="openId" column="open_id"/>
+        <result property="name" column="name"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="authCode" column="auth_code"/>
+        <result property="accountId" column="account_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">

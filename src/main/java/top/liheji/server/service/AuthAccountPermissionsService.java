@@ -8,10 +8,10 @@ import top.liheji.server.pojo.AuthPermission;
 import java.util.List;
 
 /**
-* @author Galaxy
-* @description 针对表【auth_account_permissions(系统认证权限分配)】的数据库操作Service
-* @createDate 2022-07-01 12:33:29
-*/
+ * @author Galaxy
+ * @description 针对表【auth_account_permissions(系统认证权限分配)】的数据库操作Service
+ * @createDate 2022-07-01 12:33:29
+ */
 public interface AuthAccountPermissionsService extends IService<AuthAccountPermissions> {
     /**
      * 根据权限ID查询用户
@@ -19,7 +19,7 @@ public interface AuthAccountPermissionsService extends IService<AuthAccountPermi
      * @param permissionId 权限ID
      * @return 用户列表
      */
-    List<Account> selectAccountByPermissionId(Integer permissionId);
+    List<Account> getAccountByPermissionId(Long permissionId);
 
     /**
      * 根据权限ID查询用户
@@ -27,5 +27,5 @@ public interface AuthAccountPermissionsService extends IService<AuthAccountPermi
      * @param accountId 用户ID
      * @return 用户列表
      */
-    List<AuthPermission> selectPermissionByAccountId(Integer accountId);
+    List<AuthPermission> getPermissionByAccountId(Long accountId);
 }

@@ -1,8 +1,9 @@
 package top.liheji.server.util;
 
+import top.liheji.server.constant.MessageDigestEnum;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 /**
@@ -13,7 +14,10 @@ import java.util.Base64;
  * @description : 加密工具类
  */
 public class CypherUtils {
-    private static final String[] BYTE_CHARS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
+    /**
+     * 16 进制字符
+     */
+    public static final String[] BYTE_CHARS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
 
     /**
      * 利用java原生的摘要实现摘要算法
@@ -21,7 +25,7 @@ public class CypherUtils {
      * @param str 需要加密后报文
      * @return 加密字符串
      */
-    public static String encodeToHash(String str, Algorithms algorithm) {
+    public static String encodeToHash(String str, MessageDigestEnum algorithm) {
         return encodeToHash(str.getBytes(StandardCharsets.UTF_8), algorithm);
     }
 
@@ -51,7 +55,7 @@ public class CypherUtils {
      * @param bytes 需要加密后报文
      * @return 加密字符串
      */
-    public static String encodeToHash(byte[] bytes, Algorithms algorithm) {
+    public static String encodeToHash(byte[] bytes, MessageDigestEnum algorithm) {
         MessageDigest messageDigest;
         messageDigest = algorithm.messageDigest();
         messageDigest.update(bytes);

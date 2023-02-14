@@ -7,21 +7,11 @@
     <cache-ref namespace="top.liheji.server.mapper.UploadInfoMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.UploadInfo">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="fileName" column="file_name" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="fileInfoId" column="file_info_id" jdbcType="INTEGER"/>
-        <result property="accountId" column="account_id" jdbcType="INTEGER"/>
-        <association property="account"
-                     column="account_id"
-                     fetchType="lazy"
-                     select="top.liheji.mapper.AccountMapper.selectById">
-        </association>
-        <association property="fileInfo"
-                     column="file_info_id"
-                     fetchType="lazy"
-                     select="top.liheji.mapper.FileInfoMapper.selectById">
-        </association>
+        <id property="id" column="id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="createTime" column="create_time"/>
+        <result property="fileInfoId" column="file_info_id"/>
+        <result property="accountId" column="account_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">

@@ -1,20 +1,23 @@
 package top.liheji.server.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
-import top.liheji.server.pojo.Account;
+import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.AuthGroup;
 import top.liheji.server.pojo.AuthPermission;
-import top.liheji.server.service.*;
+import top.liheji.server.service.AccountService;
+import top.liheji.server.pojo.Account;
+import top.liheji.server.util.SecurityUtils;
+import top.liheji.server.util.page.PageUtils;
+import top.liheji.server.util.R;
+import top.liheji.server.vo.AccountVo;
+import top.liheji.server.vo.PersonalVo;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author : Galaxy
@@ -23,186 +26,95 @@ import java.util.*;
  * @project : serverPlus
  * @description : 实现用户操作相关功能接口
  */
-@Slf4j
 @RestController
 @RequestMapping("/account")
 public class AccountController {
     @Autowired
-    private AccountService accountService;
-
-    @Autowired
-    AuthGroupService authGroupService;
-
-    @Autowired
-    AuthPermissionService authPermissionService;
-
-    @Autowired
-    AuthAccountGroupsService authAccountGroupsService;
+    AccountService accountService;
 
     /**
      * 自己更新信息使用
      */
     @PutMapping("personal")
-    public Map<String, Object> changePersonal(String property,
-                                              String value,
-                                              @RequestParam(required = false) String newPassword,
-                                              @ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(2);
-        map.put("code", 1);
-        boolean execute = true;
-        switch (property) {
-            case "password":
-                //重新查询密码h
-                current = accountService.getById(current.getId());
-                if (current.matchPassword(value)) {
-                    value = Account.bcryptPassword(newPassword);
-                } else {
-                    map.put("msg", "密码错误");
-                    execute = false;
-                }
-                break;
-            case "email":
-            case "mobile":
-                break;
-            default:
-                throw new RuntimeException("所选类型不存在");
-        }
-
-        if (execute && accountService.update(
+    public R changePersonal(@RequestBody PersonalVo personal) {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        personal.securityCheck();
+        boolean isSuccess = accountService.update(
                 new UpdateWrapper<Account>()
                         .eq("id", current.getId())
-                        .set(property, value)
-        )) {
-            map.put("code", 0);
-            map.put("msg", "修改成功");
-        }
+                        .set(personal.getProperty(), personal.getValue())
+        );
+        return isSuccess ? R.ok() : R.error();
+    }
 
-        return map;
+    @GetMapping("groups/{accountId}")
+    public R queryGroups(@PathVariable Long accountId) {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        if (accountId == 0) {
+            accountId = current.getId();
+        } else {
+            if (!SecurityUtils.hasAuthority("view_group")) {
+                return R.error("权限不足");
+            }
+        }
+        List<AuthGroup> groups = accountService.getGroupsByAccountId(accountId);
+        List<Long> longList = groups.stream().map(AuthGroup::getId).collect(Collectors.toList());
+        return R.ok().put("data", longList);
+    }
+
+    /**
+     * 获取用户权限
+     *
+     * @param accountId 用户id
+     * @param isCode    是否返回权限码
+     * @return 权限列表
+     */
+    @GetMapping("permissions/{accountId}")
+    public R queryPermissions(@PathVariable Long accountId,
+                              @RequestParam(required = false, defaultValue = "false") Boolean isCode) {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        if (accountId == 0) {
+            accountId = current.getId();
+        } else {
+            if (!SecurityUtils.hasAuthority("view_permission")) {
+                return R.error("权限不足");
+            }
+        }
+        List<AuthPermission> permissions = accountService.getPermissionsByAccountId(accountId);
+        if (isCode) {
+            List<String> stringList = permissions.stream().map(AuthPermission::getCodename).collect(Collectors.toList());
+            return R.ok().put("data", stringList);
+        } else {
+            List<Long> longList = permissions.stream().map(AuthPermission::getId).collect(Collectors.toList());
+            return R.ok().put("data", longList);
+        }
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('view_account')")
-    public Map<String, Object> queryAccount(Integer page, Integer limit,
-                                            @RequestParam(required = false) Boolean isEnabled,
-                                            @RequestParam(required = false, defaultValue = "") String username) {
-        Map<String, Object> map = new HashMap<>(5);
-
-        LambdaQueryWrapper<Account> wrapper =
-                new LambdaQueryWrapper<Account>()
-                        .like(Account::getUsername, username);
-        if (isEnabled != null) {
-            wrapper = wrapper.eq(Account::getIsEnabled, isEnabled);
-        }
-        Page<Account> accountPage = accountService.page(new Page<>(page, limit), wrapper);
-
-        List<Account> accountList = accountPage.getRecords();
-        map.put("code", 0);
-        map.put("msg", "查询成功");
-        map.put("count", accountList.size());
-        map.put("total", accountPage.getTotal());
-        map.put("data", accountList);
-
-        return map;
-    }
-
-    @GetMapping("permissions")
-    @PreAuthorize("hasAuthority('change_account')")
-    public Map<String, Object> queryPermissions(String accountId) {
-        Map<String, Object> map = new HashMap<>(3);
-
-        map.put("code", 0);
-        map.put("msg", "OK");
-        Account account = accountService.getById(accountId);
-
-        List<AuthGroup> groups = null;
-        List<AuthPermission> permissions = null;
-
-        if (account != null) {
-            if (!account.getIsSuperuser()) {
-                groups = account.getAuthGroups();
-                permissions = account.getAuthPermissions();
-            }
-        }
-
-        if (permissions == null) {
-            permissions = new ArrayList<>();
-        }
-        if (groups == null) {
-            groups = new ArrayList<>();
-        }
-
-        // 已授权的权限
-        Set<Object> auths = new HashSet<>();
-        // 已拥有的分组
-        Set<Object> packets = new HashSet<>();
-        // 分组权限对应map
-        for (AuthGroup group : groups) {
-            packets.add(group.getId());
-            List<AuthPermission> permissions0 = group.getAuthPermissions();
-            if (permissions0 != null) {
-                for (AuthPermission permission : permissions0) {
-                    auths.add(permission.getId());
-                }
-            }
-        }
-        for (AuthPermission permission : permissions) {
-            auths.add(permission.getId());
-        }
-
-        Map<String, Object> data = new HashMap<>(2);
-        data.put("groupIds", packets);
-        data.put("permissionIds", auths);
-        map.put("data", data);
-
-        Map<String, Object> total = new HashMap<>(2);
-        total.put("groups", authGroupService.list());
-        total.put("permissions", authPermissionService.list());
-        map.put("total", total);
-
-        return map;
+    public R queryAccount(@RequestParam Map<String, Object> params) {
+        PageUtils page = accountService.queryPage(params);
+        return R.ok().put("page", page);
     }
 
     @PutMapping
     @PreAuthorize("hasAuthority('change_account')")
-    public Map<String, Object> changeAccount(Account account,
-                                             @RequestParam(required = false) List<Integer> groupIds,
-                                             @RequestParam(required = false) List<Integer> permissionIds,
-                                             @RequestParam(required = false, defaultValue = "false") Boolean resetPassword) {
-        Map<String, Object> map = new HashMap<>(2);
-        map.put("code", 1);
-        map.put("msg", "修改失败");
-
-        // 删除其他数据
-        account.setPassword(null);
-        account.clearOtherExcludeBoolean();
-
-        if (resetPassword) {
-            account.setPassword("12345");
-            account.bcryptPassword();
+    public R changeAccount(@RequestBody AccountVo accountVo) {
+        if (accountVo.getResetPassword()) {
+            accountVo.setPassword(SecurityUtils.bcrypt("12345"));
         }
-
-        if (accountService.updateById(account) &&
-                account.saveBatchGroup(groupIds) &&
-                account.saveBatchPermission(permissionIds)) {
-            map.put("code", 0);
-            map.put("msg", "修改成功");
-        }
-
-        return map;
+        accountService.updateAccount(accountVo);
+        return R.ok();
     }
 
     @PutMapping("status")
     @PreAuthorize("hasAuthority('delete_account')")
-    public Map<String, Object> deleteAccount(@RequestParam List<Integer> accountIds) {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 0);
-        map.put("msg", "操作完成");
-        map.put("count", accountService.getBaseMapper().update(null,
+    public R deleteAccount(@RequestBody List<Integer> accountIds) {
+        accountService.update(
                 new LambdaUpdateWrapper<Account>()
                         .setSql("is_enabled = !is_enabled")
                         .in(Account::getId, accountIds)
-        ));
-        map.put("total", accountIds.size());
-        return map;
+        );
+        return R.ok();
     }
 }

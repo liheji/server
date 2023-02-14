@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 @Configuration
 @EnableSwagger2
 public class Swagger2Config {
-    @Value("${debug}")
+    @Value("${debug: false}")
     private Boolean debug;
 
     @Bean

@@ -9,6 +9,10 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 import org.springframework.core.ResolvableType;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author : Galaxy
  * @time : 2022/3/2 11:04
@@ -22,9 +26,9 @@ public class BeanUtils implements ApplicationContextAware {
     private static ApplicationContext applicationContext = null;
 
     @Override
-    public void setApplicationContext(ApplicationContext arg0) throws BeansException {
+    public void setApplicationContext(ApplicationContext arg) throws BeansException {
         if (applicationContext == null) {
-            applicationContext = arg0;
+            applicationContext = arg;
         }
     }
 
@@ -89,5 +93,23 @@ public class BeanUtils implements ApplicationContextAware {
 
     public static String[] getAliases(String var1) {
         return applicationContext.getAliases(var1);
+    }
+
+
+    public static Map<String, Object> toMap(Object obj) {
+        Map<String, Object> map = new HashMap<>();
+        Field[] fields = obj.getClass().getDeclaredFields();
+        try {
+            for (Field field : fields) {
+                field.setAccessible(true);
+                String name = field.getName();
+                Object value = field.get(obj);
+                if (value != null) {
+                    map.put(name, value);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return map;
     }
 }

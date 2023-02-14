@@ -54,10 +54,6 @@ import static springfox.documentation.schema.Types.typeNameFor;
 
 /**
  * 覆盖{@link ModelAttributeParameterExpander}
- *
- * @see CustomModelAttributeParameterExpander#getBeanPropertyNames(Class)
- * @see ModelAttributeParameterExpander#getBeanPropertyNames(Class)
- * @see IgnoreSwaggerParameter
  */
 @Component
 @Primary
@@ -78,6 +74,7 @@ public class CustomModelAttributeParameterExpander extends ModelAttributeParamet
         this.enumTypeDeterminer = enumTypeDeterminer;
     }
 
+    @Override
     public List<Parameter> expand(ExpansionContext context) {
         List<Parameter> parameters = newArrayList();
         Set<PropertyDescriptor> propertyDescriptors = propertyDescriptors(context.getParamType().getErasedType());

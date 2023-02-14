@@ -2,7 +2,7 @@ package top.liheji.server.util;
 
 import com.jcraft.jsch.*;
 import lombok.Cleanup;
-import top.liheji.server.pojo.other.FileItem;
+import top.liheji.server.vo.FileItemVo;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -109,9 +109,9 @@ public class SshUtils {
         }
     }
 
-    public List<FileItem> genInfoList(String path) throws Exception {
-        List<FileItem> fileList = new ArrayList<>();
-        List<FileItem> dirList = new ArrayList<>();
+    public List<FileItemVo> genInfoList(String path) throws Exception {
+        List<FileItemVo> fileList = new ArrayList<>();
+        List<FileItemVo> dirList = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S Z");
         String[] strs = execute(String.format("cd %s;ls -lA --time-style=full-iso", path)).split("\\s*\\n\\s*");
         for (String str : strs) {
@@ -130,7 +130,7 @@ public class SshUtils {
 
             files[timeI] = files[timeI].substring(0, 12);
 
-            FileItem item = new FileItem(
+            FileItemVo item = new FileItemVo(
                     files[0], files[2], files[3],
                     sdf.parse(String.join(" ", files[dateI], files[timeI], files[zoneI])).getTime(),
                     files[nameI]
@@ -149,8 +149,8 @@ public class SshUtils {
         }
 
         // name
-        fileList.sort(Comparator.comparing(FileItem::getName));
-        dirList.sort(Comparator.comparing(FileItem::getName));
+        fileList.sort(Comparator.comparing(FileItemVo::getName));
+        dirList.sort(Comparator.comparing(FileItemVo::getName));
 
         dirList.addAll(fileList);
 

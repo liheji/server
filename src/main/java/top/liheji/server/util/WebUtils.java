@@ -1,24 +1,22 @@
 package top.liheji.server.util;
 
-import com.alibaba.fastjson.JSONObject;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.OperatingSystem;
 import eu.bitwalker.useragentutils.UserAgent;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import lombok.Cleanup;
 import org.springframework.lang.Nullable;
-import top.liheji.server.pojo.PersistentDevices;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.client.RestTemplate;
+import top.liheji.server.pojo.AuthDevices;
+import top.liheji.server.vo.IpInfoVo;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author : Galaxy
@@ -28,7 +26,10 @@ import java.util.function.Function;
  * @description : 网络相关工具类
  */
 public class WebUtils {
-    public static final String[] IP_STR = {
+    /**
+     * 尝试获取真实IP的头列表
+     */
+    public static final String[] IP_FROM = {
             "X-Forwarded-For",
             "Proxy-Client-IP",
             "WL-Proxy-Client-IP",
@@ -43,90 +44,42 @@ public class WebUtils {
      * @param req 请求
      * @return 返回信息
      */
-    public static Map<String, Object> getIp(HttpServletRequest req) {
-        String getStr = "";
-        String ip = req.getHeader(IP_STR[0]);
-        for (int i = 1; i < IP_STR.length; i++) {
-            if (ip == null || "".equals(ip) || "unknown".equalsIgnoreCase(ip)) {
-                ip = req.getHeader(IP_STR[i]);
-            } else {
-                getStr = IP_STR[i - 1];
+    @Nullable
+    public static String parseIp(HttpServletRequest req) {
+        String ip = req.getHeader(IP_FROM[0]);
+        for (String str : IP_FROM) {
+            if (!ObjectUtils.isEmpty(ip) && !"unknown".equalsIgnoreCase(ip)) {
                 break;
             }
+            ip = req.getHeader(str);
+        }
+        if (ObjectUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = req.getRemoteAddr();
         }
 
-        if (ip == null || "".equals(ip) || "unknown".equalsIgnoreCase(ip)) {
-            ip = req.getRemoteAddr();
-            getStr = "Remote-Addr";
-        } else if (ip.contains(",")) {
+        if (ip.contains(",")) {
             ip = ip.split(",")[0];
         }
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("ip", ip);
-        map.put("from", getStr);
-
-        return map;
+        return ip;
     }
 
 
     /**
      * 获取请求IP地址
      *
-     * @param ip    请求IP
-     * @param query 查询IP
+     * @param fromIp 请求IP
+     * @param query  查询IP
      * @return 返回信息
      */
-    public static Map<String, Object> getIpInfo(String ip, @Nullable String query) {
-        Map<String, Object> map = new HashMap<>(10);
-
-        String url = "https://whois.pconline.com.cn/ipJson.jsp?level=3&json=true";
-
-        map.put("code", 0);
-        if (isRegularIp(query)) {
-            url += "&ip=" + query.trim();
-            map.put("msg", "查询成功");
-            map.put("query", query.trim());
-        } else {
-            url += "&ip=" + ip.trim();
-            map.put("msg", "查询请求IP");
-            map.put("query", ip.trim());
+    public static IpInfoVo getIpInfo(String fromIp, @Nullable String query) {
+        if (!isIpv4(query)) {
+            query = fromIp;
         }
 
-
-        HashMap tmpMap = WebUtils.get(url, HashMap.class, null);
-        if (tmpMap != null) {
-            map.put("addr", tmpMap.get("addr"));
-            map.put("query", tmpMap.get("ip"));
-        } else {
-            map.put("code", 1);
-            map.put("msg", "查询出错");
-        }
-
-        return map;
-    }
-
-    /**
-     * GEt 请求
-     *
-     * @return 响应字符串
-     */
-    @Nullable
-    public static <T> T get(String url, Class<T> clazz, Function<String, Boolean> function) {
-        try {
-            OkHttpClient client = new OkHttpClient();
-            Request request = new Request.Builder().url(url).build();
-
-            Response response = client.newCall(request).execute();
-            String respStr = response.body().string();
-            if (function != null && function.apply(respStr)) {
-                return null;
-            }
-
-            return JSONObject.parseObject(respStr, clazz);
-        } catch (Exception e) {
-            return null;
-        }
+        RestTemplate restTemplate = BeanUtils.getBean(RestTemplate.class);
+        String url = "https://whois.pconline.com.cn/ipJson.jsp?level=3&json=true&ip=" + query.trim();
+        return restTemplate.getForObject(url, IpInfoVo.class);
     }
 
     /**
@@ -135,53 +88,15 @@ public class WebUtils {
      * @param ip IP地址
      * @return IP地址是否正确
      */
-    public static boolean isRegularIp(@Nullable String ip) {
-        if (ip == null || "".equals(ip.trim())) {
+    public static boolean isIpv4(@Nullable String ip) {
+        if (ip == null || ip.trim().isEmpty()) {
             return false;
         }
         try {
             return InetAddress.getByName(ip.trim()) instanceof Inet4Address;
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             return false;
         }
-    }
-
-    /**
-     * 将POST数据转化为JS代码
-     *
-     * @param req 请求
-     * @return 返回转化完成的字符串
-     */
-    public static String paramToPostJs(HttpServletRequest req) {
-        StringBuilder ret = new StringBuilder();
-        ret.append(String.format("const form = document.createElement('form');form.method = 'post';form.action = '%s';", req.getRequestURL().toString()));
-        String paramStr = "const filed%d = document.createElement('input');filed%d.name = '%s';filed%d.value = '%s';form.appendChild(filed%d);";
-        String back = "document.body.appendChild(form);form.submit();";
-
-        int i = 0;
-        for (Map.Entry<String, String[]> it : req.getParameterMap().entrySet()) {
-            ret.append(String.format(paramStr, i, i, it.getKey(), i, it.getValue()[0], i));
-            i++;
-        }
-
-        ret.append(back);
-        return ret.toString();
-    }
-
-    /**
-     * 将GET数据转化为JS代码
-     *
-     * @param req 请求
-     * @return 返回转化完成的字符串
-     */
-    public static String paramToGetStr(HttpServletRequest req) {
-        List<String> ret = new ArrayList<>();
-
-        for (Map.Entry<String, String[]> it : req.getParameterMap().entrySet()) {
-            ret.add(String.format("%s=%s", it.getKey(), it.getValue()[0]));
-        }
-
-        return String.join("&", ret);
     }
 
     /**
@@ -189,12 +104,11 @@ public class WebUtils {
      *
      * @param request HttpServletRequest
      */
-    public static PersistentDevices parseAgent(HttpServletRequest request) {
+    public static AuthDevices parseAgent(HttpServletRequest request) {
         String userAgent = request.getHeader("User-Agent");
-        PersistentDevices ret = parseAgent(userAgent);
+        AuthDevices ret = parseAgent(userAgent);
         if (ret != null) {
-            Map<String, Object> ipInfo = getIp(request);
-            ret.setIp((String) ipInfo.get("ip"));
+            ret.setIp(parseIp(request));
         }
         return ret;
     }
@@ -204,19 +118,19 @@ public class WebUtils {
      *
      * @param agentStr useragentStr
      */
-    private static PersistentDevices parseAgent(String agentStr) {
+    private static AuthDevices parseAgent(String agentStr) {
         try {
             UserAgent agent = UserAgent.parseUserAgentString(agentStr);
             Browser browser = agent.getBrowser();
             OperatingSystem operatingSystem = agent.getOperatingSystem();
 
             final String b = String.format("%s %s %s",
-                    StringUtils.toWord(browser.getManufacturer().toString()),
+                    toWord(browser.getManufacturer().toString()),
                     browser.getName().replaceAll("\\d+|\\(.*?\\)", "").trim(),
                     agent.getBrowserVersion().getVersion());
 
             final String os = String.format("%s %s",
-                    StringUtils.toWord(operatingSystem.getManufacturer().toString()),
+                    toWord(operatingSystem.getManufacturer().toString()),
                     operatingSystem.getName());
 
             String dt;
@@ -233,14 +147,79 @@ public class WebUtils {
                     break;
             }
 
-            if (StringUtils.isEmpty(b) ||
-                    StringUtils.isEmpty(os) ||
-                    StringUtils.isEmpty(dt)) {
+            if (ObjectUtils.isEmpty(b) ||
+                    ObjectUtils.isEmpty(os) ||
+                    ObjectUtils.isEmpty(dt)) {
                 return null;
             }
-            return new PersistentDevices(dt, b, os);
+            return new AuthDevices(dt, b, os);
         } catch (Exception err) {
             return null;
         }
+    }
+
+    /**
+     * 返回JSON数据
+     *
+     * @param r    响应数据
+     * @param resp 响应
+     * @throws IOException IO异常
+     */
+    public static void response(HttpServletResponse resp, R r) throws IOException {
+        resp.setContentType("application/json;charset=utf-8");
+        PrintWriter out = resp.getWriter();
+        out.write(r.toJSON());
+        out.flush();
+        out.close();
+    }
+
+    /**
+     * 返回text/html数据
+     *
+     * @param resp   响应
+     * @param msg    信息
+     * @param toMain 是否去主页
+     * @throws IOException IO异常
+     */
+    public static void response(HttpServletResponse resp, String msg, boolean toMain) throws IOException {
+        resp.setContentType("text/html;charset=utf-8");
+        PrintWriter out = resp.getWriter();
+        out.write(oauth2Html(msg, toMain));
+        out.flush();
+        out.close();
+    }
+
+    /**
+     * 拼接返回的HTML
+     *
+     * @param msg    信息
+     * @param toMain 是否去主页
+     * @return HTML文本
+     */
+    private static String oauth2Html(String msg, boolean toMain) {
+        final String path = toMain ? "/#/main/personal" : "/#/login?msg=" + msg;
+        StringBuilder builder = new StringBuilder();
+        try {
+            File oauth2 = FileUtils.resourceFile("templates", "oauth2.html");
+            @Cleanup FileInputStream fis = new FileInputStream(oauth2);
+            @Cleanup InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
+            @Cleanup BufferedReader reader = new BufferedReader(isr);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+        } catch (Exception ignored) {
+        }
+        return String.format(builder.toString(), path);
+    }
+
+    /**
+     * 将英文转化为单词样式（eg: good => Good）
+     *
+     * @param str 转换前的字符
+     * @return 转化完成的字符
+     */
+    private static String toWord(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
 }

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -24,19 +23,19 @@ public class AuthAccountGroups implements Serializable {
      * 数据库字段
      */
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 外键
      */
-    private Integer accountId;
+    private Long accountId;
 
-    private Integer groupId;
+    private Long groupId;
 
     /**
      * 非数据库字段
      */
-    public AuthAccountGroups(Integer accountId, Integer groupId) {
+    public AuthAccountGroups(Long accountId, Long groupId) {
         this.accountId = accountId;
         this.groupId = groupId;
     }

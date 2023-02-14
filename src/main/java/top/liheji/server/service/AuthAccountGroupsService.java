@@ -8,10 +8,10 @@ import top.liheji.server.pojo.AuthGroup;
 import java.util.List;
 
 /**
-* @author Galaxy
-* @description 针对表【auth_account_groups(用户分组)】的数据库操作Service
-* @createDate 2022-07-01 12:33:29
-*/
+ * @author Galaxy
+ * @description 针对表【auth_account_groups(用户分组)】的数据库操作Service
+ * @createDate 2022-07-01 12:33:29
+ */
 public interface AuthAccountGroupsService extends IService<AuthAccountGroups> {
 
     /**
@@ -20,7 +20,7 @@ public interface AuthAccountGroupsService extends IService<AuthAccountGroups> {
      * @param groupId 分组（角色）ID
      * @return 用户列表
      */
-    List<Account> selectAccountByGroupId(Integer groupId);
+    List<Account> getAccountByGroupId(Long groupId);
 
 
     /**
@@ -29,5 +29,5 @@ public interface AuthAccountGroupsService extends IService<AuthAccountGroups> {
      * @param accountId 用户ID
      * @return 用户列表
      */
-    List<AuthGroup> selectGroupByAccountId(Integer accountId);
+    List<AuthGroup> getGroupByAccountId(Long accountId);
 }

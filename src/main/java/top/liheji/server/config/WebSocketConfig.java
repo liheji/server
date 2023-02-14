@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
-import top.liheji.server.config.handler.WebsocketHandler;
-import top.liheji.server.config.intercept.WebSocketInterceptor;
+import top.liheji.server.config.websocket.handler.WebsocketHandler;
+import top.liheji.server.config.websocket.interceptor.WebSocketInterceptor;
 
 /**
  * @author : Galaxy

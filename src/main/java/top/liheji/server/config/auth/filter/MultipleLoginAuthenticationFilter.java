@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.util.Assert;
 import top.liheji.server.config.auth.CaptchaAuthenticationToken;
+import top.liheji.server.config.auth.constant.AuthType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,18 +54,16 @@ public class MultipleLoginAuthenticationFilter extends AbstractAuthenticationPro
         if (this.postOnly && !request.getMethod().equals("POST")) {
             throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
         }
-        AbstractAuthenticationToken authRequest;
+        AuthType authType = AuthType.getByCode(obtainAuthType(request));
         String username = obtainUsername(request);
         String password = obtainPassword(request);
-        switch (obtainAuthType(request).toUpperCase()) {
-            case "CAPTCHA":
-                // 用户验证码登录（手机号或邮箱）
-                authRequest = new CaptchaAuthenticationToken(username, password);
-                break;
-            default:
-                // 用户名密码登录
-                authRequest = new UsernamePasswordAuthenticationToken(username, password);
-                break;
+        AbstractAuthenticationToken authRequest;
+        if (authType == AuthType.PASSWORD) {
+            // 用户名密码登录
+            authRequest = new UsernamePasswordAuthenticationToken(username, password);
+        } else {
+            // 用户验证码登录（手机号或邮箱）
+            authRequest = new CaptchaAuthenticationToken(username, password);
         }
         // Allow subclasses to set the "details" property
         setDetails(request, authRequest);

@@ -30,7 +30,7 @@ public class PermissionCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (permissionProperty.getCreate() || authPermissionService.count() <= 0) {
+        if (permissionProperty.getCreate()) {
             authPermissionService.clear();
             for (PermissionProperty.Permission permission : permissionProperty.getList()) {
                 Class<?> clzz = permission.getClass();

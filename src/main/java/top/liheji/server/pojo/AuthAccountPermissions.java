@@ -24,19 +24,19 @@ public class AuthAccountPermissions implements Serializable {
      * 数据库字段
      */
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 外键
      */
-    private Integer accountId;
+    private Long accountId;
 
-    private Integer permissionId;
+    private Long permissionId;
 
     /**
      * 非数据库字段
      */
-    public AuthAccountPermissions(Integer accountId, Integer permissionId) {
+    public AuthAccountPermissions(Long accountId, Long permissionId) {
         this.accountId = accountId;
         this.permissionId = permissionId;
     }

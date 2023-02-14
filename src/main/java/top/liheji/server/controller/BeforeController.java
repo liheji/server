@@ -1,21 +1,16 @@
 package top.liheji.server.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import top.liheji.server.constant.CaptchaTypeEnum;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.service.AccountService;
 import top.liheji.server.service.CaptchaService;
-import top.liheji.server.util.FileUtils;
-import top.liheji.server.util.MediaType;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.util.*;
+import top.liheji.server.util.*;
+import top.liheji.server.vo.ForgetVo;
+import top.liheji.server.vo.RegisterVo;
 
 /**
  * @author : Galaxy
@@ -35,72 +30,44 @@ public class BeforeController {
     private CaptchaService captchaService;
 
     @PostMapping("forget")
-    public Map<String, Object> forget(String username, String key, String password) {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 1);
-        map.put("msg", "用户不存在");
-
+    public R forget(@RequestBody ForgetVo forget) {
         Account account = accountService.getOne(
                 new LambdaQueryWrapper<Account>()
-                        .eq(Account::getUsername, username)
+                        .eq(Account::getUsername, forget.getUsername())
                         .or()
-                        .eq(Account::getEmail, username)
+                        .eq(Account::getEmail, forget.getUsername())
                         .or()
-                        .eq(Account::getMobile, username)
+                        .eq(Account::getMobile, forget.getUsername())
         );
-        if (account != null) {
-            if (captchaService.checkCaptcha(key)) {
-                account.setPassword(password);
-                account.bcryptPassword();
-                if (accountService.saveOrUpdate(account)) {
-                    map.put("code", 0);
-                    map.put("msg", "修改完成");
-                }
-            } else {
-                map.put("code", 1);
-                map.put("msg", "校验码错误");
-            }
+        if (account == null || !captchaService.checkCaptcha(null, forget.getKey())) {
+            return R.error("校验失败，请检查");
         }
-        return map;
+        account.setPassword(forget.bcrypt());
+        boolean isUpdate = accountService.updateById(account);
+
+        return isUpdate ? R.ok() : R.error();
     }
 
     @PostMapping("register")
-    public Map<String, Object> register(Account account, String licence) {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 1);
-        map.put("msg", "授权码错误");
-
-        if (captchaService.checkSecret(null, licence)) {
-            account.bcryptPassword();
-            if (accountService.save(account)) {
-                map.put("code", 0);
-                map.put("msg", "注册成功");
-            } else {
-                map.put("code", 1);
-                map.put("msg", "系统错误");
+    public R register(@RequestBody RegisterVo register) {
+        if (captchaService.checkCaptcha(null, register.getLicence())) {
+            Account account = register.toAccount();
+            boolean isSave = accountService.save(account);
+            if (isSave) {
+                return R.ok();
             }
         }
 
-        return map;
+        return R.error();
     }
 
     @GetMapping("imageCaptcha")
-    public Map<String, Object> imgCaptcha(@RequestParam(required = false, defaultValue = "100") Integer width,
-                                          @RequestParam(required = false, defaultValue = "38") Integer height) throws Exception {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 0);
-        map.put("msg", "获取成功");
-        map.put("data", captchaService.genImgCaptcha(4, width, height));
-
-        return map;
+    public R imgCaptcha() {
+        return R.ok().put("data", captchaService.genImgCaptcha(null, CaptchaTypeEnum.GENERAL));
     }
 
     @GetMapping("sendCaptcha")
-    public Map<String, Object> sendCaptcha(String receiver, String property) {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 1);
-        map.put("msg", "用户不存在");
-
+    public R sendCaptcha(String receiver, String property) {
         Account account = accountService.getOne(
                 new LambdaQueryWrapper<Account>()
                         .eq(Account::getUsername, receiver)
@@ -109,29 +76,29 @@ public class BeforeController {
                         .or()
                         .eq(Account::getMobile, receiver)
         );
-        if (account != null) {
-            switch (property) {
-                case "email":
-                    captchaService.sendEmailCaptcha(receiver);
-                    map.put("code", 0);
-                    map.put("msg", "发送成功");
-                    break;
-                case "mobile":
-                    // 发送手机验证码
-                    //  captchaService.sendMobileCaptcha(receiver);
-                    map.put("code", 1);
-                    map.put("msg", "暂不支持手机号验证");
-                    break;
-                default:
-                    throw new RuntimeException("所选类型不存在");
+        CaptchaTypeEnum captchaType = CaptchaTypeEnum.from(property);
+        if (account == null || captchaType == null) {
+            throw new IllegalArgumentException("参数错误，请检查");
+        }
+        switch (captchaType) {
+            case EMAIL: {
+                captchaService.sendCaptcha("", receiver, CaptchaTypeEnum.EMAIL);
             }
+            break;
+            case MOBILE: {
+                return R.error("暂不支持手机号验证");
+                // 发送手机验证码
+                //  captchaService.sendCaptcha("", receiver, CaptchaTypeEnum.MOBILE);
+            }
+            default:
+                throw new IllegalArgumentException("参数错误，请检查");
         }
 
-        return map;
+        return R.ok();
     }
 
     @GetMapping("uniqueCheck")
-    public Map<String, Object> uniqueCheck(String param) {
+    public R uniqueCheck(String param) {
         long count = accountService.count(
                 new LambdaQueryWrapper<Account>()
                         .eq(Account::getUsername, param)
@@ -141,86 +108,6 @@ public class BeforeController {
                         .eq(Account::getEmail, param)
         );
 
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 0);
-        map.put("msg", "OK");
-        map.put("result", count > 0);
-        return map;
-    }
-
-    @PostMapping("cdn")
-    public void cdnPost(@RequestParam("file") MultipartFile file, @RequestHeader("AUTH-TOKEN") String xToken,
-                       HttpServletResponse resp) throws Exception {
-        final String basePath = "/usr/local/cdn";
-        final String passToken = "217d65b63a22401a810a0442492a5f4e";
-        if (!passToken.equals(xToken)) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
-
-        String originName = file.getOriginalFilename();
-
-        File save = new File(basePath, MediaType.guessMediaType(originName).split("/")[0]);
-        if (save.isFile() || !save.exists()) {
-            save.mkdirs();
-        }
-        String fileName = UUID.randomUUID().toString().replaceAll("-", "") + FileUtils.splitText(originName)[1];
-        save = new File(save, fileName);
-
-        //为读取文件提供流通道
-        @Cleanup InputStream in = file.getInputStream();
-        @Cleanup OutputStream os = new FileOutputStream(save);
-
-        int num;
-        byte[] bytes = new byte[1024];
-        while ((num = in.read(bytes)) != -1) {
-            os.write(bytes, 0, num);
-        }
-
-        resp.setContentType("application/json;charset=utf-8");
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 0);
-        map.put("msg", "OK");
-        map.put("url", save.getAbsolutePath().replace(basePath, ""));
-
-        PrintWriter out = resp.getWriter();
-        out.write(JSONObject.toJSONString(map));
-        out.flush();
-        out.close();
-    }
-
-    @DeleteMapping("cdn")
-    public void cdnDelete(@RequestHeader("AUTH-TOKEN") String xToken, String filename,
-                          HttpServletResponse resp) throws Exception {
-        final String basePath = "/usr/local/cdn";
-        final String passToken = "217d65b63a22401a810a0442492a5f4e";
-        if (!passToken.equals(xToken)) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
-
-        File save = new File(basePath, MediaType.guessMediaType(filename).split("/")[0]);
-        if (save.isFile() || !save.exists()) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
-        save = new File(save, filename);
-        if (!save.exists()) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
-
-        //为读取文件提供流通道
-        resp.setContentType("application/json;charset=utf-8");
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 0);
-        map.put("msg", "OK");
-        if (!save.delete()) {
-            map.put("code", 1);
-            map.put("msg", "FAIL");
-        }
-
-        PrintWriter out = resp.getWriter();
-        out.write(JSONObject.toJSONString(map));
-        out.flush();
-        out.close();
+        return R.ok().put("result", count > 0);
     }
 }

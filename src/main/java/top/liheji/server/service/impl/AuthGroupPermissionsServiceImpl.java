@@ -2,11 +2,11 @@ package top.liheji.server.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+import top.liheji.server.service.AuthGroupPermissionsService;
 import top.liheji.server.mapper.AuthGroupPermissionsMapper;
 import top.liheji.server.pojo.AuthGroup;
 import top.liheji.server.pojo.AuthGroupPermissions;
 import top.liheji.server.pojo.AuthPermission;
-import top.liheji.server.service.AuthGroupPermissionsService;
 
 import java.util.List;
 
@@ -20,12 +20,12 @@ public class AuthGroupPermissionsServiceImpl extends ServiceImpl<AuthGroupPermis
         implements AuthGroupPermissionsService {
 
     @Override
-    public List<AuthPermission> selectPermissionByGroupId(Integer groupId) {
+    public List<AuthPermission> getPermissionByGroupId(Long groupId) {
         return baseMapper.selectPermissionByGroupId(groupId);
     }
 
     @Override
-    public List<AuthGroup> selectGroupByPermissionId(Integer permissionId) {
+    public List<AuthGroup> getGroupByPermissionId(Long permissionId) {
         return baseMapper.selectGroupByPermissionId(permissionId);
     }
 }

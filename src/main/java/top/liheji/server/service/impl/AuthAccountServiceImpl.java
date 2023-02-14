@@ -2,9 +2,9 @@ package top.liheji.server.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+import top.liheji.server.service.AuthAccountService;
 import top.liheji.server.mapper.AuthAccountMapper;
 import top.liheji.server.pojo.AuthAccount;
-import top.liheji.server.service.AuthAccountService;
 
 /**
 * @author Galaxy
@@ -13,7 +13,7 @@ import top.liheji.server.service.AuthAccountService;
 */
 @Service("authAccountService")
 public class AuthAccountServiceImpl extends ServiceImpl<AuthAccountMapper, AuthAccount>
-    implements AuthAccountService{
+    implements AuthAccountService {
 
 }
 

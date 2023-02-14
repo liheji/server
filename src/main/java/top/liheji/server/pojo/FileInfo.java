@@ -2,6 +2,7 @@ package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 
 import java.io.Serializable;
@@ -15,12 +16,13 @@ import java.util.Date;
  */
 @TableName(value = "server_file_info")
 @Data
+@NoArgsConstructor
 public class FileInfo implements Serializable {
     /**
      * 数据库字段
      */
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     private String fileName;
 
@@ -37,9 +39,6 @@ public class FileInfo implements Serializable {
      */
     @TableField(exist = false)
     private static final long serialVersionUID = -5714303279467640238L;
-
-    public FileInfo() {
-    }
 
     public FileInfo(String fileName, Long fileSize, String fileHash) {
         this.fileName = fileName;

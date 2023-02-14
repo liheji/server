@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerIntercept
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author : Galaxy
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
+@EnableTransactionManagement
 public class MybatisPlusConfig {
     /**
      * 加载分页插件
@@ -30,7 +32,7 @@ public class MybatisPlusConfig {
         //添加乐观锁插件
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
 
-        log.info("MybatisPlus拦截器（分页功能和乐观锁插件）注入成功");
+        log.info("MybatisPlus拦截器（分页功能和乐观锁插件）注册成功");
 
         return interceptor;
     }

@@ -1,7 +1,11 @@
 package top.liheji.server.util;
 
+import org.springframework.util.ObjectUtils;
+
 import java.util.Random;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author : Galaxy
@@ -11,7 +15,9 @@ import java.util.UUID;
  * @description : 字符串工具类
  */
 public class StringUtils {
-    private static final char[] UUID_CHARS = {'a', 'b', 'c', 'd', 'e', 'f',
+    public static final Pattern HTTP_RANGE_HEADER = Pattern.compile("bytes=(\\d*)-(\\d*)");
+
+    public static final char[] UUID_CHARS = {'a', 'b', 'c', 'd', 'e', 'f',
             'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
             't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5',
             '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
@@ -23,8 +29,8 @@ public class StringUtils {
      *
      * @return UUID字符串
      */
-    public static String genUuidWithoutLine() {
-        return genUuid().replaceAll("-", "");
+    public static String getUuidNoLine() {
+        return getUuid().replaceAll("-", "");
     }
 
     /**
@@ -32,25 +38,8 @@ public class StringUtils {
      *
      * @return UUID字符串
      */
-    public static String genUuid() {
+    public static String getUuid() {
         return UUID.randomUUID().toString();
-    }
-
-    /**
-     * 获取一个8位UUID字符串
-     *
-     * @return UUID字符串
-     */
-    public static String genShortUuid() {
-        String uid = genUuidWithoutLine();
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < 8; i++) {
-            String sub = uid.substring(i * 4, i * 4 + 4);
-            int x = Integer.parseInt(sub, 16);
-            result.append(UUID_CHARS[x % 0x3E]);
-        }
-
-        return result.toString();
     }
 
     /**
@@ -59,7 +48,7 @@ public class StringUtils {
      * @param len 字符串长度
      * @return 生成的字符串
      */
-    public static String genRandString(int len) {
+    public static String getRandString(int len) {
         Random random = new Random();
 
         StringBuilder result = new StringBuilder();
@@ -80,23 +69,39 @@ public class StringUtils {
     }
 
     /**
-     * 判断字符串是否为空
+     * 解析HTTP Range头
      *
-     * @param str 字符串
-     * @return 是否为空
+     * @param range range头
+     * @param total 总长度
+     * @return 返回解析结果
      */
-    public static boolean isEmpty(String str) {
-        return str == null || "".equals(str.trim());
-    }
+    public static long[] parseRange(String range, long total) {
+        long[] pos = new long[]{0, total - 1};
 
+        // 有range参数
+        if(ObjectUtils.isEmpty(range)) {
+            return pos;
+        }
+        Matcher m = HTTP_RANGE_HEADER.matcher(range);
+        if (m.find()) {
+            String start = m.group(1).trim();
+            String end = m.group(2).trim();
+            if (start.isEmpty() && !end.isEmpty()) {
+                pos[0] = pos[1] - Long.parseLong(end) + 1;
+            } else {
+                if (!start.isEmpty()) {
+                    pos[0] = Long.parseLong(start);
+                }
+                if (!end.isEmpty()) {
+                    pos[1] = Long.parseLong(end);
+                }
+                if (pos[0] > pos[1]) {
+                    pos[0] = 0L;
+                    pos[1] = total - 1;
+                }
+            }
+        }
 
-    /**
-     * 将英文转化为单词样式（eg: good => Good）
-     *
-     * @param str 转换前的字符
-     * @return 转化完成的字符
-     */
-    public static String toWord(String str) {
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+        return pos;
     }
 }

@@ -2,11 +2,11 @@ package top.liheji.server.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+import top.liheji.server.service.AuthAccountPermissionsService;
 import top.liheji.server.mapper.AuthAccountPermissionsMapper;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.AuthAccountPermissions;
 import top.liheji.server.pojo.AuthPermission;
-import top.liheji.server.service.AuthAccountPermissionsService;
 
 import java.util.List;
 
@@ -20,12 +20,12 @@ public class AuthAccountPermissionsServiceImpl extends ServiceImpl<AuthAccountPe
         implements AuthAccountPermissionsService {
 
     @Override
-    public List<Account> selectAccountByPermissionId(Integer permissionId) {
+    public List<Account> getAccountByPermissionId(Long permissionId) {
         return baseMapper.selectAccountByPermissionId(permissionId);
     }
 
     @Override
-    public List<AuthPermission> selectPermissionByAccountId(Integer accountId) {
+    public List<AuthPermission> getPermissionByAccountId(Long accountId) {
         return baseMapper.selectPermissionByAccountId(accountId);
     }
 }

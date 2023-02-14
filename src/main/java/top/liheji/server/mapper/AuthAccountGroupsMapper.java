@@ -3,7 +3,7 @@ package top.liheji.server.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
-import top.liheji.server.config.cache.MybatisPlusRedisCache;
+import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.AuthAccountGroups;
 import top.liheji.server.pojo.AuthGroup;
@@ -26,7 +26,7 @@ public interface AuthAccountGroupsMapper extends BaseMapper<AuthAccountGroups> {
      * @param groupId 分组（角色）ID
      * @return 用户列表
      */
-    List<Account> selectAccountByGroupId(Integer groupId);
+    List<Account> selectAccountByGroupId(Long groupId);
 
 
     /**
@@ -35,7 +35,7 @@ public interface AuthAccountGroupsMapper extends BaseMapper<AuthAccountGroups> {
      * @param accountId 用户ID
      * @return 用户列表
      */
-    List<AuthGroup> selectGroupByAccountId(Integer accountId);
+    List<AuthGroup> selectGroupByAccountId(Long accountId);
 }
 
 

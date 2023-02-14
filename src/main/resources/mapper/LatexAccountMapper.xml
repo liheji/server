@@ -7,24 +7,18 @@
     <cache-ref namespace="top.liheji.server.mapper.LatexAccountMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.LatexAccount">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="username" column="username" jdbcType="VARCHAR"/>
-        <result property="password" column="password" jdbcType="VARCHAR"/>
-        <result property="tel" column="tel" jdbcType="VARCHAR"/>
-        <result property="mail" column="mail" jdbcType="VARCHAR"/>
-        <result property="equiptype" column="equiptype" jdbcType="VARCHAR"/>
-        <result property="isAvailable" column="is_available" jdbcType="BIT"/>
-        <result property="lastLogin" column="last_login" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="version" column="version" jdbcType="INTEGER"/>
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="equiptype" column="equiptype"/>
+        <result property="isAvailable" column="is_available"/>
+        <result property="lastLogin" column="last_login"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        ,username,password,
-        tel,mail,equiptype,
-        is_available,last_login,
-        update_time,create_time,version
+        ,username,password,equiptype,
+        is_available,last_login,create_time
     </sql>
 </mapper>

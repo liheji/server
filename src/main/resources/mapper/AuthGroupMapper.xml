@@ -7,18 +7,13 @@
     <cache-ref namespace="top.liheji.server.mapper.AuthGroupMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthGroup">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="codename" column="codename" jdbcType="VARCHAR"/>
-        <result property="name" column="name" jdbcType="VARCHAR"/>
-        <collection property="authPermissions"
-                    column="id"
-                    javaType="top.liheji.server.pojo.AuthPermission"
-                    fetchType="lazy"
-                    select="top.liheji.server.mapper.AuthGroupPermissionsMapper.selectPermissionByGroupId">
-        </collection>
+        <id property="id" column="id"/>
+        <result property="codename" column="codename"/>
+        <result property="name" column="name"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,codename,name
+        id
+        ,codename,name
     </sql>
 </mapper>

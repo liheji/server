@@ -20,7 +20,7 @@ public interface AuthGroupPermissionsService extends IService<AuthGroupPermissio
      * @param groupId 分组（角色）ID
      * @return 权限列表
      */
-    List<AuthPermission> selectPermissionByGroupId(Integer groupId);
+    List<AuthPermission> getPermissionByGroupId(Long groupId);
 
     /**
      * 根据权限ID查询分组
@@ -28,5 +28,5 @@ public interface AuthGroupPermissionsService extends IService<AuthGroupPermissio
      * @param permissionId 权限ID
      * @return 分组列表
      */
-    List<AuthGroup> selectGroupByPermissionId(Integer permissionId);
+    List<AuthGroup> getGroupByPermissionId(Long permissionId);
 }

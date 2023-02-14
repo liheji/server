@@ -1,18 +1,20 @@
 package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import springfox.documentation.annotations.ApiIgnore;
+import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.pojo.PersistentDevices;
-import top.liheji.server.service.PersistentDevicesService;
-import top.liheji.server.service.PersistentLoginsService;
+import top.liheji.server.pojo.AuthDevices;
+import top.liheji.server.service.AuthDevicesService;
+import top.liheji.server.util.R;
+import top.liheji.server.vo.AuthDevicesVo;
 
 import javax.servlet.http.HttpSession;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author : Galaxy
@@ -25,64 +27,46 @@ import java.util.Map;
 @RequestMapping("/device")
 public class DeviceController {
     @Autowired
-    private PersistentLoginsService persistentLoginsService;
-
-    @Autowired
-    private PersistentDevicesService persistentDevicesService;
+    private AuthDevicesService authDevicesService;
 
     @GetMapping
-    public Map<String, Object> queryDevice(@RequestAttribute("series") String series,
-                                           @ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(4);
-        List<PersistentDevices> devicesList = persistentDevicesService.list(
-                new LambdaQueryWrapper<PersistentDevices>()
-                        .eq(PersistentDevices::getUsername, current.getUsername())
+    public R queryDevice() {
+        String series = ServerConstant.LOCAL_SERIES.get();
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        List<AuthDevices> devicesList = authDevicesService.list(
+                new LambdaQueryWrapper<AuthDevices>()
+                        .eq(AuthDevices::getUsername, current.getUsername())
         );
-        for (PersistentDevices devices : devicesList) {
-            devices.setOther(series);
-        }
-        map.put("code", 0);
-        map.put("msg", "获取设备成功");
-        map.put("data", devicesList);
-        map.put("total", devicesList.size());
 
-        return map;
+        List<AuthDevicesVo> resultData = devicesList.stream().map(it -> {
+            AuthDevicesVo vo = new AuthDevicesVo();
+            BeanUtils.copyProperties(it, vo);
+            vo.setOther(series);
+            return vo;
+        }).collect(Collectors.toList());
+
+        return R.ok().put("data", resultData);
     }
 
     @PutMapping
-    public Map<String, Object> changeDevice(String tp,
-                                            HttpSession session,
-                                            @RequestAttribute("series") String series,
-                                            @ApiIgnore @RequestAttribute("account") Account current) {
-        PersistentDevices persistentDevices = persistentDevicesService.getOne(
-                new LambdaQueryWrapper<PersistentDevices>()
-                        .eq(PersistentDevices::getType, tp)
-                        .eq(PersistentDevices::getUsername, current.getUsername())
+    public R changeDevice(@RequestBody Map<String, Object> param, HttpSession session) {
+        String type = param.get("type").toString();
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        AuthDevices persistentDevices = authDevicesService.getOne(
+                new LambdaQueryWrapper<AuthDevices>()
+                        .eq(AuthDevices::getType, type)
+                        .eq(AuthDevices::getUsername, current.getUsername())
         );
 
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 1);
-        map.put("msg", "非法操作");
-        if (persistentDevices != null) {
-            //移除cookie
-            persistentDevices.setOther(series);
-            persistentLoginsService.removeById(persistentDevices.getSeries());
-            persistentDevices.setSeries("");
-            persistentDevicesService.update(
-                    persistentDevices,
-                    new LambdaQueryWrapper<PersistentDevices>()
-                            .eq(PersistentDevices::getType, tp)
-                            .eq(PersistentDevices::getUsername, current.getUsername())
-            );
-
-            map.put("code", 0);
-            map.put("msg", "设备注销成功");
-            if (persistentDevices.getIsCurrent()) {
-                session.invalidate();
-                map.put("msg", "本设备已注销");
-            }
+        if (persistentDevices == null) {
+            return R.error("非法操作");
         }
 
-        return map;
+        authDevicesService.invalidateDevice(persistentDevices);
+        if (persistentDevices.getSeries().equals(ServerConstant.LOCAL_SERIES.get())) {
+            session.invalidate();
+        }
+
+        return R.ok();
     }
 }

@@ -11,10 +11,9 @@ import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import top.liheji.server.config.auth.CaptchaAuthenticationToken;
 import top.liheji.server.service.CaptchaService;
-
-import java.util.Objects;
 
 /**
  * @author : Galaxy
@@ -39,12 +38,8 @@ public class CaptchaAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if (Objects.isNull(userDetails)) {
-            throw new BadCredentialsException("当前账号不存在");
-        }
-
-        if (!captchaService.checkCaptcha(password, username)) {
-            throw new BadCredentialsException("验证码错误");
+        if (ObjectUtils.isEmpty(userDetails) || !captchaService.checkCaptcha(null, password)) {
+            throw new BadCredentialsException("校验失败，请检查");
         }
 
         CaptchaAuthenticationToken result = new CaptchaAuthenticationToken(

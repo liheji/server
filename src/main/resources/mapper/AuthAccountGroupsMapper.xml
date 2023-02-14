@@ -7,13 +7,14 @@
     <cache-ref namespace="top.liheji.server.mapper.AuthAccountGroupsMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthAccountGroups">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="accountId" column="account_id" jdbcType="INTEGER"/>
-        <result property="groupId" column="group_id" jdbcType="INTEGER"/>
+        <id property="id" column="id"/>
+        <result property="accountId" column="account_id"/>
+        <result property="groupId" column="group_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,account_id,group_id
+        id
+        ,account_id,group_id
     </sql>
 
     <select id="selectGroupByAccountId" resultType="top.liheji.server.pojo.AuthGroup">

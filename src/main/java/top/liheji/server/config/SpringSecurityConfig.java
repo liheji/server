@@ -1,7 +1,6 @@
 package top.liheji.server.config;
 
-import com.alibaba.fastjson.JSONObject;
-import lombok.Cleanup;
+import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +12,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -24,27 +22,26 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import top.liheji.server.config.auth.AuthType;
+import top.liheji.server.config.auth.constant.AuthConstant;
+import top.liheji.server.config.auth.remember.RedisTokenBasedRememberMeServices;
+import top.liheji.server.config.oauth.constant.OAuthType;
 import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
 import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.config.filter.ParamSetFilter;
-import top.liheji.server.config.auth.remember.impl.CustomTokenRememberMeServices;
-import top.liheji.server.config.auth.client.MultipleAuthorizationCodeTokenResponseClient;
-import top.liheji.server.config.auth.client.BaiduAuthorizationCodeTokenResponseClient;
-import top.liheji.server.config.auth.client.QQAuthorizationCodeTokenResponseClient;
-import top.liheji.server.config.auth.service.MultipleOAuth2UserServiceImpl;
-import top.liheji.server.config.auth.service.BaiduOAuth2UserServiceImpl;
-import top.liheji.server.config.auth.service.QQOAuth2UserServiceImpl;
+import top.liheji.server.config.oauth.client.MultipleAuthorizationCodeTokenResponseClient;
+import top.liheji.server.config.oauth.client.BaiduAuthorizationCodeTokenResponseClient;
+import top.liheji.server.config.oauth.client.QQAuthorizationCodeTokenResponseClient;
+import top.liheji.server.config.oauth.service.MultipleOAuth2UserServiceImpl;
+import top.liheji.server.config.oauth.service.BaiduOAuth2UserServiceImpl;
+import top.liheji.server.config.oauth.service.QQOAuth2UserServiceImpl;
+import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.util.FileUtils;
-import top.liheji.server.util.StringUtils;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import top.liheji.server.util.CypherUtils;
+import top.liheji.server.util.R;
+import top.liheji.server.util.WebUtils;
 
 /**
  * @author : Galaxy
@@ -63,10 +60,8 @@ import java.util.*;
 @Configuration
 @EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
-    @Value("${debug}")
+    @Value("${debug: false}")
     private Boolean debug;
-
-    private static final String REMEMBER_KEY = StringUtils.genUuid();
 
     @Autowired
     private CaptchaFilter captchaFilter;
@@ -80,38 +75,24 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private CaptchaAuthenticationProvider captchaAuthenticationProvider;
 
+    @Autowired
+    private PersistentTokenRepository redisTokenRepository;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.authenticationProvider(captchaAuthenticationProvider);
         // 用户加载器
         auth.userDetailsService(userDetailsService)
                 // 密码加密函数
-                .passwordEncoder(passwordEncoder());
+                .passwordEncoder(new BCryptPasswordEncoder());
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //验证码过滤器
-        // 这些URL需要拦截并识别验证码
-        captchaFilter.setMatchers("/login", "/before/forget", "/before/register", "/account/personal");
+        // 这些 URL需要拦截并识别验证码
+        captchaFilter.setMatchers("/login", "/before/forget", "/before/register");
         // 设置拦截URL中需要排除验证的特殊项
-        captchaFilter.setExcludeMatcherFunction(request -> {
-            String uri = request.getRequestURI();
-
-            // 手机号暂不支持验证码（没钱开）
-            if (uri.startsWith("/account/personal")) {
-                String property = request.getParameter("property");
-                return "mobile".equals(property);
-            }
-
-            // 验证码登录不需要检查图片验证码
-            if (uri.startsWith("/login")) {
-                String authType = Optional.ofNullable(request.getParameter("auth-type")).orElse("").trim();
-                return "CAPTCHA".equalsIgnoreCase(authType);
-            }
-            return false;
-        });
-
         paramSetFilter.setExcludeMatchers("/login*", "/before/**");
         // 设置用户参数过滤器
         if (debug) {
@@ -165,7 +146,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // formLogin：不管用，需要到下方的 authenticationFilter 函数中设置
         // oauth2Login： 需要用到记住密码的服务
         http.rememberMe()
-                .key(REMEMBER_KEY)
+                .key(AuthConstant.REMEMBER_ME_KEY)
                 .rememberMeServices(rememberMeServices());
 
         // 未登录以及登录认证设置
@@ -173,16 +154,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticationEntryPoint(exceptionHandler());
 
         log.info("SpringSecurity配置加载完成");
-    }
-
-    /**
-     * 注入Security密码加密和比对类
-     *
-     * @return 加密类
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     /**
@@ -208,8 +179,18 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      * @return 记住密码服务
      */
     @Bean
-    public CustomTokenRememberMeServices rememberMeServices() {
-        return new CustomTokenRememberMeServices(REMEMBER_KEY, userDetailsService);
+    public RedisTokenBasedRememberMeServices rememberMeServices() {
+        RedisTokenBasedRememberMeServices rememberMeServices = new RedisTokenBasedRememberMeServices(
+                AuthConstant.REMEMBER_ME_KEY,
+                userDetailsService,
+                redisTokenRepository);
+
+        // 设置记住密码相关设置
+        rememberMeServices.setAlwaysRemember(true);
+        rememberMeServices.setCookieName(AuthConstant.REMEMBER_COOKIE_NAME);
+        rememberMeServices.setParameter(AuthConstant.REMEMBER_PARAMETER);
+        rememberMeServices.setTokenValiditySeconds((int) AuthConstant.REMEMBER_EXPIRE_SECONDS);
+        return rememberMeServices;
     }
 
     /**
@@ -219,11 +200,11 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-        MultipleAuthorizationCodeTokenResponseClient client = new MultipleAuthorizationCodeTokenResponseClient();
+        MultipleAuthorizationCodeTokenResponseClient multipleClient = new MultipleAuthorizationCodeTokenResponseClient();
         // 加入QQ自定义 QQAuthorizationCodeTokenResponseClient
-        client.getMultipleClient().put(AuthType.QQ.getCode(), new QQAuthorizationCodeTokenResponseClient());
-        client.getMultipleClient().put(AuthType.Baidu.getCode(), new BaiduAuthorizationCodeTokenResponseClient());
-        return client;
+        multipleClient.put(OAuthType.QQ, new QQAuthorizationCodeTokenResponseClient());
+        multipleClient.put(OAuthType.Baidu, new BaiduAuthorizationCodeTokenResponseClient());
+        return multipleClient;
     }
 
     /**
@@ -233,11 +214,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Bean
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
-        MultipleOAuth2UserServiceImpl service = new MultipleOAuth2UserServiceImpl();
-        // 加入QQ自定义QQOAuth2UserService
-        service.getMultipleService().put(AuthType.QQ.getCode(), new QQOAuth2UserServiceImpl());
-        service.getMultipleService().put(AuthType.Baidu.getCode(), new BaiduOAuth2UserServiceImpl());
-        return service;
+        MultipleOAuth2UserServiceImpl multipleService = new MultipleOAuth2UserServiceImpl();
+        multipleService.put(OAuthType.QQ, new QQOAuth2UserServiceImpl());
+        multipleService.put(OAuthType.Baidu, new BaiduOAuth2UserServiceImpl());
+        return multipleService;
     }
 
     /**
@@ -247,22 +227,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private AuthenticationSuccessHandler formLoginSuccessHandler() {
         return (req, resp, authentication) -> {
-            resp.setContentType("application/json;charset=utf-8");
-            Map<String, Object> objectMap = new HashMap<>(3);
-            Account account = (Account) req.getAttribute("account");
-            if (resp.getStatus() == HttpServletResponse.SC_NOT_ACCEPTABLE) {
-                objectMap.put("code", 1);
-                objectMap.put("msg", "无法识别登录设备，不允许登录");
-                log.warn("无法识别的设备尝试登录");
-            } else {
-                objectMap.put("code", 0);
-                objectMap.put("msg", "登录成功");
-                objectMap.put("data", account);
-            }
-            PrintWriter out = resp.getWriter();
-            out.write(JSONObject.toJSONString(objectMap));
-            out.flush();
-            out.close();
+            Account current = ServerConstant.LOCAL_ACCOUNT.get();
+            current.setPassword("");
+            R r = R.ok().put("data", CypherUtils.encodeToBase64(JSON.toJSONBytes(current)));
+            WebUtils.response(resp, r);
         };
     }
 
@@ -273,14 +241,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private AuthenticationFailureHandler formLoginFailureHandler() {
         return (req, resp, e) -> {
-            resp.setContentType("application/json;charset=utf-8");
-            PrintWriter out = resp.getWriter();
-            Map<String, Object> objectMap = new HashMap<>(2);
-            objectMap.put("code", 1);
-            objectMap.put("msg", "认证出错，请重试。");
-            out.write(JSONObject.toJSONString(objectMap));
-            out.flush();
-            out.close();
+            e.printStackTrace();
+            WebUtils.response(resp, R.error(e.getMessage()));
         };
     }
 
@@ -291,17 +253,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private AuthenticationSuccessHandler oauth2LoginSuccessHandler() {
         return (req, resp, authentication) -> {
-            resp.setContentType("text/html;charset=utf-8");
-            // 获取输出信息
-            String info = (String) req.getAttribute("info");
-            String error = (String) req.getAttribute("error");
-            if (!StringUtils.isEmpty(error)) {
-                resp.getWriter().write(oauth2Html(error, false));
-            } else if (!StringUtils.isEmpty(info)) {
-                resp.getWriter().write(oauth2Html(info, true));
-            } else {
-                resp.getWriter().write(oauth2Html("第三方认证失败", false));
-            }
+            WebUtils.response(resp, "", true);
         };
     }
 
@@ -312,8 +264,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private AuthenticationFailureHandler oauth2LoginFailureHandler() {
         return (req, resp, e) -> {
-            resp.setContentType("text/html;charset=utf-8");
-            resp.getWriter().write(oauth2Html("第三方认证失败", false));
+            e.printStackTrace();
+            WebUtils.response(resp, "登录失败", false);
         };
     }
 
@@ -324,14 +276,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private LogoutSuccessHandler logoutSuccessHandler() {
         return (req, resp, authentication) -> {
-            resp.setContentType("application/json;charset=utf-8");
-            PrintWriter out = resp.getWriter();
-            Map<String, Object> objectMap = new HashMap<>(2);
-            objectMap.put("code", 0);
-            objectMap.put("msg", "注销成功");
-            out.write(JSONObject.toJSONString(objectMap));
-            out.flush();
-            out.close();
+            WebUtils.response(resp, R.ok());
         };
     }
 
@@ -342,35 +287,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private AuthenticationEntryPoint exceptionHandler() {
         return (req, resp, authException) -> {
-            String tid = req.getParameter("token");
-            if (tid == null || "".equals(tid.trim())) {
-                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            }
+            authException.printStackTrace();
+            WebUtils.response(resp, R.error(authException.getMessage()));
         };
-    }
-
-
-    /**
-     * 拼接返回的HTML
-     *
-     * @param msg    信息
-     * @param toMain 是否去主页
-     * @return HTML文本
-     */
-    private String oauth2Html(String msg, boolean toMain) {
-        final String path = toMain ? "/#/main/personal" : "/#/login?msg=" + msg;
-        StringBuilder builder = new StringBuilder();
-        try {
-            File oauth2 = FileUtils.resourceFile("templates", "oauth2.html");
-            @Cleanup FileInputStream fis = new FileInputStream(oauth2);
-            @Cleanup InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
-            @Cleanup BufferedReader reader = new BufferedReader(isr);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-        } catch (Exception ignored) {
-        }
-        return String.format(builder.toString(), path);
     }
 }

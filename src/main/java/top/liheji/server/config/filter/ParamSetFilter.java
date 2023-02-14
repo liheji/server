@@ -3,15 +3,15 @@ package top.liheji.server.config.filter;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.rememberme.InvalidCookieException;
+import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
+import top.liheji.server.config.auth.constant.AuthConstant;
+import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.pojo.PassToken;
-import top.liheji.server.pojo.PersistentLogins;
 import top.liheji.server.service.AccountService;
-import top.liheji.server.service.PassTokenService;
-import top.liheji.server.service.PersistentLoginsService;
 
 
 import javax.servlet.FilterChain;
@@ -34,24 +34,16 @@ import java.util.function.Function;
  */
 @Component
 public class ParamSetFilter extends OncePerRequestFilter {
-
-    private String tokenName = "token";
-
-    private String cookieName = "sessionid";
-
-    private List<String> excludeMatchers;
-
-    private Function<HttpServletRequest, Boolean> excludeMatcherFunction;
-
     @Autowired
     private AccountService accountService;
 
     @Autowired
-    private PassTokenService passTokenService;
+    PersistentTokenRepository redisTokenRepository;
 
-    @Autowired
-    private PersistentLoginsService persistentLoginsService;
 
+    private List<String> excludeMatchers;
+
+    private Function<HttpServletRequest, Boolean> excludeMatcherFunction;
 
     public static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
@@ -66,25 +58,12 @@ public class ParamSetFilter extends OncePerRequestFilter {
         }
 
         //设置参数
-        String token = request.getParameter(this.tokenName);
-        PassToken passToken = passTokenService.selectTokenByKey(token);
-        if (passToken != null) {
-            passToken.getAccount().setPassword("");
-            request.setAttribute("account", passToken.getAccount());
-
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String cookieValue = extractRememberMeCookie(request, this.cookieName);
+        String cookieValue = extractRememberMeCookie(request);
         if (cookieValue != null) {
             String[] strings = decodeCookie(cookieValue);
             if (strings != null) {
-                PersistentLogins logins = persistentLoginsService.getOne(
-                        new LambdaQueryWrapper<PersistentLogins>()
-                                .eq(PersistentLogins::getSeries, strings[0])
-                );
-                if (logins == null) {
+                PersistentRememberMeToken token = redisTokenRepository.getTokenForSeries(strings[0]);
+                if (token == null) {
                     request.getSession().invalidate();
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
@@ -92,13 +71,12 @@ public class ParamSetFilter extends OncePerRequestFilter {
 
                 Account account = accountService.getOne(
                         new LambdaQueryWrapper<Account>()
-                                .eq(Account::getUsername, logins.getUsername())
+                                .eq(Account::getUsername, token.getUsername())
                 );
-                account.setPassword("");
-
-                request.setAttribute("series", strings[0]);
-                request.setAttribute("account", account);
-
+                // 共享数据
+                ServerConstant.LOCAL_ACCOUNT.set(account);
+                ServerConstant.LOCAL_SERIES.set(strings[0]);
+                // 继续执行
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -113,48 +91,28 @@ public class ParamSetFilter extends OncePerRequestFilter {
                 cookieValue = cookieValue + "=";
             }
             String cookieAsPlainText;
-
             cookieAsPlainText = new String(Base64.getDecoder().decode(cookieValue.getBytes()));
-
             String[] tokens = org.springframework.util.StringUtils.delimitedListToStringArray(cookieAsPlainText, ":");
-
             for (int i = 0; i < tokens.length; ++i) {
                 tokens[i] = URLDecoder.decode(tokens[i], StandardCharsets.UTF_8.toString());
             }
-
             return tokens;
         } catch (Exception var7) {
             return null;
         }
     }
 
-    private String extractRememberMeCookie(HttpServletRequest request, String cookieName) {
+    private String extractRememberMeCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if ((cookies == null) || (cookies.length == 0)) {
             return null;
         }
         for (Cookie cookie : cookies) {
-            if (cookieName.equals(cookie.getName())) {
+            if (AuthConstant.REMEMBER_COOKIE_NAME.equals(cookie.getName())) {
                 return cookie.getValue();
             }
         }
         return null;
-    }
-
-    public String getCookieName() {
-        return cookieName;
-    }
-
-    public void setCookieName(String cookieName) {
-        this.cookieName = cookieName;
-    }
-
-    public String getTokenName() {
-        return tokenName;
-    }
-
-    public void setTokenName(String tokenName) {
-        this.tokenName = tokenName;
     }
 
     public void setExcludeMatchers(String... excludeMatchers) {

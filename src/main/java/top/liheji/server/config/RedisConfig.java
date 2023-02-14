@@ -57,7 +57,7 @@ public class RedisConfig {
 
         redisTemplate.afterPropertiesSet();
 
-        log.info("RedisTemplate注入成功");
+        log.info("RedisTemplate 注册成功");
 
         return redisTemplate;
     }

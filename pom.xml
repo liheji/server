@@ -10,7 +10,7 @@
     </parent>
     <groupId>top.liheji</groupId>
     <artifactId>server</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>war</packaging>
     <name>server</name>
     <description>Demo project for Spring Boot</description>
@@ -67,6 +67,22 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.lettuce</groupId>
+                    <artifactId>lettuce-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- 缓存 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <!-- jedis -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -84,13 +100,12 @@
             <artifactId>knife4j-spring-ui</artifactId>
             <version>3.0.3</version>
         </dependency>
-        <!-- jedis -->
         <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <version>3.8.0</version>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
         </dependency>
-        <!--mysql驱动-->
+        <!-- mysql驱动 -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -104,15 +119,9 @@
         </dependency>
         <!-- fastjson -->
         <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>2.0.4</version>
-        </dependency>
-        <!-- 数据源 -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.1.24</version>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.22</version>
         </dependency>
         <!-- Useragent识别包 -->
         <dependency>
@@ -125,12 +134,6 @@
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
             <version>1.4</version>
-        </dependency>
-        <!--selenium自动化测试-->
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>3.141.59</version>
         </dependency>
         <!--html,xml网页解析-->
         <dependency>
@@ -159,6 +162,12 @@
             <groupId>com.aspose</groupId>
             <artifactId>aspose-slides</artifactId>
             <version>22.1</version>
+        </dependency>
+        <!-- 本地 easy-captcha -->
+        <dependency>
+            <groupId>com.github.whvcse</groupId>
+            <artifactId>easy-captcha</artifactId>
+            <version>1.6.4</version>
         </dependency>
     </dependencies>
     <build>

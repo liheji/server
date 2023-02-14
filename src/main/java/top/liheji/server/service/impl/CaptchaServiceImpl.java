@@ -1,21 +1,21 @@
 package top.liheji.server.service.impl;
 
+import com.wf.captcha.ArithmeticCaptcha;
+import com.wf.captcha.GifCaptcha;
+import com.wf.captcha.SpecCaptcha;
+import com.wf.captcha.base.CaptchaAbstract;
+import com.wf.captcha.base.Randoms;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import top.liheji.server.service.CaptchaService;
-import top.liheji.server.util.CypherUtils;
-import top.liheji.server.util.StringUtils;
+import top.liheji.server.constant.CaptchaTypeEnum;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,202 +32,117 @@ public class CaptchaServiceImpl implements CaptchaService {
     private JavaMailSender javaMailSender;
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
-    private static final Random RANDOM = new Random();
-    private static final String CAPTCHA_CHARS = "0123456798qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+    private static final String REDIS_CAPTCHA_PREFIX = "server:captcha:";
 
     @Override
-    public String genImgCaptcha(int len, int width, int height) throws Exception {
-        //生成验证码并存储到 redis
-        String code = genCaptcha(len);
-        //生成验证码图片并返回
-        return ImageUtils.genCaptchaImage(code, width, height);
+    public String genCaptcha(String username, CaptchaTypeEnum captchaType) {
+        CaptchaAbstract captcha = getCaptchaService(username, captchaType);
+        return captcha.text();
     }
 
     @Override
-    public void sendEmailCaptcha(String receiver) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setSubject("SERVER 邮箱验证");
-        message.setFrom("2820054672@qq.com");
-        message.setTo(receiver);
-        message.setSentDate(new Date());
-        message.setText(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", genCaptcha(6, receiver)));
-        javaMailSender.send(message);
+    public String genImgCaptcha(String username, CaptchaTypeEnum captchaType) {
+        CaptchaAbstract captcha = getCaptchaService(username, captchaType);
+        return captcha.toBase64();
     }
 
     @Override
-    public void sendMobileCaptcha(String receiver) {
-        log.info(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", genCaptcha(6, receiver)));
-        // 发送手机验证码
-    }
-
-    @Override
-    public String genCaptcha(int len, String... prefix) {
-        String pf = String.join(":", prefix);
-
-        String code = "";
-        Boolean res = false;
-        // 生成 redis 不存在的验证码
-        while (res != null && !res) {
-            StringBuilder builder = new StringBuilder();
-            for (int j = 0; j < len; ++j) {
-                builder.append(CAPTCHA_CHARS.charAt(RANDOM.nextInt(CAPTCHA_CHARS.length())));
+    public void sendCaptcha(String username, String receiver, CaptchaTypeEnum captchaType) {
+        CaptchaAbstract captcha = new SpecCaptcha();
+        saveCaptcha(captcha, username, captchaType);
+        switch (captchaType) {
+            case EMAIL: {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setSubject("SERVER 邮箱验证");
+                message.setFrom("2820054672@qq.com");
+                message.setTo(receiver);
+                message.setSentDate(new Date());
+                message.setText(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", captcha.text()));
+                javaMailSender.send(message);
             }
-            //存储到 redis(大小写不敏感)
-            code = builder.toString();
-            res = redisTemplate.opsForValue().setIfAbsent(
-                    String.format("captcha:%s:%s", pf, code.toLowerCase()),
-                    "",
-                    10 * 60L, TimeUnit.SECONDS
-            );
+            break;
+            case MOBILE: {
+                log.info(String.format("你申请的验证码为：%s\n10分钟内有效\n请尽快输入你的验证码\n", captcha.text()));
+                // TODO 发送手机验证码
+            }
+            break;
+            default:
+                break;
         }
-        return code;
     }
 
     @Override
-    public boolean checkCaptcha(String code, String... prefix) {
-        String pf = String.join(":", prefix);
+    public boolean checkCaptcha(String username, String code) {
         if (code == null) {
             return false;
         }
 
-        String key = String.format("captcha:%s:%s", pf, code.toLowerCase());
-        Object obj = redisTemplate.opsForValue().get(key);
-        if (obj != null) {
-            redisTemplate.delete(key);
+        if (username == null || username.trim().isEmpty()) {
+            username = "";
         }
 
-        return obj != null;
+        String key = String.format("%s%s:%s", REDIS_CAPTCHA_PREFIX, username, code.toLowerCase());
+        return Boolean.TRUE.equals(stringRedisTemplate.delete(key));
     }
 
-    @Override
-    public String genSecret(String username, long expire) {
-        //生成秘钥
-        String key = "";
-        Boolean res = false;
-        // 生成 redis 不存在的秘钥
-        while (res != null && !res) {
-            //存储到 redis
-            key = StringUtils.genUuidWithoutLine().toLowerCase();
-            res = redisTemplate.opsForValue().setIfAbsent("secret:" + key, username, expire, TimeUnit.SECONDS);
-        }
-
-        return key;
-    }
-
-    @Override
-    public boolean checkSecret(String username, String code) {
-        if (code == null) {
-            return false;
-        }
-
-        String key = "secret:" + code.toLowerCase();
-        Object obj = redisTemplate.opsForValue().get(key);
-        if (obj != null) {
-            String uname = (String) obj;
-            redisTemplate.delete(key);
-            return username == null || username.equals(uname);
-        }
-
-        return false;
-    }
-
-    private static class ImageUtils {
-        /**
-         * 绘制验证码图片
-         *
-         * @param code   验证码字符串
-         * @param width  验证码图片宽度
-         * @param height 验证码图片高度
-         * @return 验证码 ID
-         * @throws Exception 异常
-         */
-        private static String genCaptchaImage(String code, int width, int height) throws Exception {
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            Graphics2D graphics = image.createGraphics();
-
-
-            //设置验证码图像背景
-            graphics.setColor(randomColor(180, 240));
-            graphics.fillRect(0, 0, width, height);
-
-            //绘制验证码
-            for (int i = 0; i < code.length(); i++) {
-                char chr = code.charAt(i);
-                //设置字体
-                graphics.setColor(randomColor(50, 160));
-
-                int fontsize = height;
-                if (chr < 'a' || chr > 'z') {
-                    fontsize = (int) Math.round(fontsize / 4.0 * 3.0);
+    /**
+     * 获取验证码服务
+     *
+     * @param username    用户名
+     * @param captchaType 验证码类型
+     * @return 验证码服务
+     */
+    private CaptchaAbstract getCaptchaService(String username, CaptchaTypeEnum captchaType) {
+        CaptchaAbstract captcha;
+        switch (captchaType) {
+            case GENERAL: {
+                switch (Randoms.num(3)) {
+                    case 1:
+                        captcha = new ArithmeticCaptcha(100, 38, 2);
+                        break;
+                    case 2:
+                        captcha = new GifCaptcha(100, 38, 4);
+                        break;
+                    default:
+                        captcha = new SpecCaptcha(100, 38, 4);
+                        break;
                 }
-                Font newFont = new Font("SimHei", Font.PLAIN, fontsize);
-                graphics.setFont(newFont);
-
-                //绘制单个验证码
-                int x = (int) Math.round(width / 20.0 + width * 0.23 * i);
-                int y = (int) Math.round(height / 5.0 * 4.0);
-
-                int deg = random(-20, 20);
-                graphics.translate(x, y);
-                graphics.rotate(deg * Math.PI / 180);
-                graphics.drawString(chr + "", 0, 0);
-                graphics.rotate(-deg * Math.PI / 180);
-                graphics.translate(-x, -y);
             }
-
-            //绘制干扰直线
-            for (int i = 0; i < 4; i++) {
-                graphics.setColor(randomColor(40, 180));
-                graphics.drawLine(RANDOM.nextInt(width), RANDOM.nextInt(height), RANDOM.nextInt(width), RANDOM.nextInt(height));
+            break;
+            case GENERAL_SECRET:
+            case REGISTER_SECRET: {
+                captcha = new SpecCaptcha();
+                captcha.setLen(16);
+                captcha.setCharType(CaptchaAbstract.TYPE_NUM_AND_LOWER);
             }
-
-            //绘制噪点
-            for (int i = 0; i < width / 4; i++) {
-                graphics.setColor(randomColor(0, 255));
-                graphics.fillRect(RANDOM.nextInt(width), RANDOM.nextInt(height), 2, 2);
+            break;
+            default: {
+                captcha = new SpecCaptcha(100, 38, 4);
             }
-
-            return encodeImageToBase64(image);
+            break;
         }
+        saveCaptcha(captcha, username, captchaType);
+        return captcha;
+    }
 
-        /**
-         * BufferedImage 转化为URL类型的BASE64编码
-         *
-         * @param image 图片
-         * @return BASE64编码数据
-         * @throws IOException 异常
-         */
-        private static String encodeImageToBase64(BufferedImage image) throws IOException {
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            ImageIO.write(image, "jpg", stream);
-            return String.format("data:image/%s;base64,%s", "jpg", CypherUtils.encodeToBase64(stream.toByteArray()));
+    /**
+     * 保存验证码到 redis
+     *
+     * @param captcha     验证码生成器
+     * @param username    用户名
+     * @param captchaType 验证码类型
+     */
+    private void saveCaptcha(CaptchaAbstract captcha, String username, CaptchaTypeEnum captchaType) {
+        if (username == null || username.trim().isEmpty()) {
+            username = "";
         }
-
-        /**
-         * 随机获取颜色
-         *
-         * @param min RGB最小值
-         * @param max RGB最大值
-         * @return 生成的颜色
-         */
-        private static Color randomColor(int min, int max) {
-            int r = random(min, max);
-            int g = random(min, max);
-            int b = random(min, max);
-            return new Color(r, g, b);
-        }
-
-        /**
-         * 生成min到max之间的随机数
-         *
-         * @param min 最小值
-         * @param max 最大值
-         * @return 随机数
-         */
-        private static int random(int min, int max) {
-            return RANDOM.nextInt(max - min) + min;
-        }
+        stringRedisTemplate.opsForValue().setIfAbsent(
+                String.format("%s%s:%s", REDIS_CAPTCHA_PREFIX, username, captcha.text().toLowerCase()),
+                String.valueOf(System.currentTimeMillis()),
+                captchaType.getExpire(),
+                TimeUnit.MINUTES
+        );
     }
 }

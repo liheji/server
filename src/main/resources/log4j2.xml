@@ -7,7 +7,7 @@
         <!-- 生成环境保存日志文件目录 -->
         <Property name="file_path" value="${sys:catalina.home}/logs/server"/>
         <!-- 测试环境保存日志文件目录 -->
-<!--                        <Property name="file_path" value="server_logs"/>-->
+        <!--                        <Property name="file_path" value="server_logs"/>-->
         <!-- 日志文件的最大容量，超过该值就进行备份 -->
         <Property name="file_max_size" value="100MB"/>
         <!-- 备份的文件夹名称 如下为：2020-02 -->

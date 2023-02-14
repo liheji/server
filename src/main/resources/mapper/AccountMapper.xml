@@ -11,33 +11,22 @@
     <cache-ref namespace="top.liheji.server.mapper.AccountMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.Account">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="username" column="username" jdbcType="VARCHAR"/>
-        <result property="password" column="password" jdbcType="VARCHAR"/>
-        <result property="mobile" column="mobile" jdbcType="VARCHAR"/>
-        <result property="email" column="email" jdbcType="VARCHAR"/>
-        <result property="isEnabled" column="is_enabled" jdbcType="BIT"/>
-        <result property="isSuperuser" column="is_superuser" jdbcType="BIT"/>
-        <result property="lastLogin" column="last_login" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="version" column="version" jdbcType="INTEGER"/>
-        <collection property="authGroups"
-                    column="id"
-                    javaType="top.liheji.server.pojo.AuthGroup"
-                    fetchType="lazy"
-                    select="top.liheji.server.mapper.AuthAccountGroupsMapper.selectGroupByAccountId">
-        </collection>
-        <collection property="authPermissions"
-                    column="id"
-                    javaType="top.liheji.server.pojo.AuthPermission"
-                    fetchType="lazy"
-                    select="top.liheji.server.mapper.AuthAccountPermissionsMapper.selectPermissionByAccountId">
-        </collection>
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="mobile" column="mobile"/>
+        <result property="email" column="email"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="isSuperuser" column="is_superuser"/>
+        <result property="lastLogin" column="last_login"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="version" column="version"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,username,password,
+        id
+        ,username,password,
         mobile,email,is_enabled,is_superuser,
         last_login,update_time,create_time,
         version

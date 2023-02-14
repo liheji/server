@@ -7,11 +7,11 @@
     <cache-ref namespace="top.liheji.server.mapper.FileInfoMapper"/>
 
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.FileInfo">
-        <id property="id" column="id" jdbcType="INTEGER"/>
-        <result property="fileName" column="file_name" jdbcType="VARCHAR"/>
-        <result property="fileSize" column="file_size" jdbcType="BIGINT"/>
-        <result property="fileHash" column="file_hash" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <id property="id" column="id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="fileHash" column="file_hash"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">

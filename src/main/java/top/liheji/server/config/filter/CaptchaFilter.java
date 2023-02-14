@@ -1,21 +1,23 @@
 package top.liheji.server.config.filter;
 
-import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import top.liheji.server.constant.ServerConstant;
+import top.liheji.server.pojo.AuthDevices;
 import top.liheji.server.service.CaptchaService;
+import top.liheji.server.util.R;
+import top.liheji.server.util.WebUtils;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.*;
 import java.util.function.Function;
 
@@ -24,7 +26,7 @@ import java.util.function.Function;
  * @time : 2022/1/29 20:47
  * @create : IdeaJ
  * @project : serverPlus
- * @description : 过滤器: 实现验证码自主验证功能
+ * @description : 过滤器: 实现验证码验证(仅限非登录请求)
  */
 @Component
 public class CaptchaFilter extends OncePerRequestFilter {
@@ -85,7 +87,14 @@ public class CaptchaFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if (!requiresAuthentication(request)) {
+        // 验证登录设备信息
+        AuthDevices device = WebUtils.parseAgent(request);
+        if (ObjectUtils.isEmpty(device)) {
+            throw new DisabledException("无法识别的访问设备");
+        }
+        ServerConstant.LOCAL_DEVICE.set(device);
+
+        if (!requireAuthMethod(request)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -94,18 +103,17 @@ public class CaptchaFilter extends OncePerRequestFilter {
             this.attemptAuthentication(request);
             filterChain.doFilter(request, response);
         } catch (AuthenticationException ex) {
-            response.setContentType("application/json;charset=utf-8");
-            PrintWriter out = response.getWriter();
-            Map<String, Object> objectMap = new HashMap<>(2);
-            objectMap.put("code", 1);
-            objectMap.put("msg", ex.getMessage());
-            out.write(JSONObject.toJSONString(objectMap));
-            out.flush();
-            out.close();
+            WebUtils.response(response, R.error(ex.getMessage()));
         }
     }
 
-    private boolean requiresAuthentication(HttpServletRequest request) {
+    /**
+     * 不需要验证码验证的请求方法
+     *
+     * @param request 请求
+     * @return 是否需要验证
+     */
+    private boolean requireAuthMethod(HttpServletRequest request) {
         String method = request.getMethod().toLowerCase();
         return "post".equals(method) || "put".equals(method) || "delete".equals(method);
     }
@@ -113,12 +121,7 @@ public class CaptchaFilter extends OncePerRequestFilter {
     private void attemptAuthentication(HttpServletRequest request) throws AuthenticationException {
         if (requiresCaptcha(request) && !excludeRequireCaptcha(request)) {
             String captcha = obtainCaptcha(request);
-
-            if (captcha == null) {
-                throw new DisabledException("验证码不能为空");
-            }
-
-            if (!captchaService.checkCaptcha(captcha)) {
+            if (!captchaService.checkCaptcha(null, captcha)) {
                 throw new DisabledException("验证码错误");
             }
         }

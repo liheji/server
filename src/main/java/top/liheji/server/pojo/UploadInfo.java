@@ -2,9 +2,8 @@ package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
-import top.liheji.server.service.FileInfoService;
-import top.liheji.server.util.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -17,52 +16,33 @@ import java.util.Date;
  */
 @TableName(value = "server_upload_info")
 @Data
+@NoArgsConstructor
 public class UploadInfo implements Serializable {
     /**
      * 数据库字段
      */
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     private String fileName;
 
+    @ApiIgnoreProperty
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
     /**
      * 外键
      */
-    private Integer fileInfoId;
+    private Long fileInfoId;
 
-    private Integer accountId;
-
-    /**
-     * 非数据库字段
-     */
-    @ApiIgnoreProperty
-    @TableField(exist = false)
-    private FileInfo fileInfo;
-
-    @ApiIgnoreProperty
-    @TableField(exist = false)
-    private Account account;
+    private Long accountId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = -1148089707419906713L;
 
-    public UploadInfo() {
-    }
-
-    public UploadInfo(String fileName, Integer fileInfoId, Integer accountId) {
+    public UploadInfo(String fileName, Long fileInfoId, Long accountId) {
         this.fileName = fileName;
         this.fileInfoId = fileInfoId;
         this.accountId = accountId;
-    }
-
-    public FileInfo getFileInfo() {
-        if (this.id != null) {
-            this.fileInfo = BeanUtils.getBean(FileInfoService.class).getById(this.id);
-        }
-        return fileInfo;
     }
 }

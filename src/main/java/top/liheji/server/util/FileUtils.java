@@ -4,6 +4,8 @@ import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
+import top.liheji.server.constant.MessageDigestEnum;
+import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.FileInfo;
 
 import java.io.*;
@@ -20,8 +22,6 @@ import java.security.MessageDigest;
  */
 @Slf4j
 public class FileUtils {
-    private static final String RESOURCE_DIR = "/usr/local/tomcat/resources";
-
     /**
      * 保存文件
      *
@@ -43,13 +43,13 @@ public class FileUtils {
             fileName = "";
         }
 
-        File f = genNoRepeatFile(splitText(fileName)[1], "uploads");
+        File f = getUniqueFile(splitText(fileName)[1], "uploads");
 
         //为读取文件提供流通道
         @Cleanup InputStream in = file.getInputStream();
         @Cleanup OutputStream out = new FileOutputStream(f);
-        MessageDigest digestMd5 = Algorithms.MD5.messageDigest();
-        MessageDigest digestSha256 = Algorithms.SHA_256.messageDigest();
+        MessageDigest digestMd5 = MessageDigestEnum.MD5.messageDigest();
+        MessageDigest digestSha256 = MessageDigestEnum.SHA_256.messageDigest();
 
         int num;
         byte[] bytes = new byte[1024];
@@ -69,30 +69,33 @@ public class FileUtils {
     /**
      * 文件写入
      *
-     * @param out 输出流
-     * @param raf 输出流
-     * @param pos 偏移
-     * @param len 长度
+     * @param file 文件
+     * @param out  输出流
+     * @param pos  偏移
+     * @param len  长度
      * @throws IOException IOException
      */
-    public static void writePos(OutputStream out, RandomAccessFile raf, long pos, long len) throws IOException {
+    public static void writePos(File file, OutputStream out, long pos, long len) throws IOException {
+        if (out == null) {
+            return;
+        }
+        //构建任意读取输入流
+        @Cleanup RandomAccessFile raf = new RandomAccessFile(file, "r");
         raf.seek(pos);
 
         long total = 0L;
-        byte[] buffer = new byte[10240];
+        byte[] buffer = new byte[1024];
         while (true) {
             int res = raf.read(buffer);
-            if (res <= 0) {
+            if (res <= 0 || total >= len) {
                 break;
             }
 
             total += res;
-            if (out != null) {
-                if (total < len) {
-                    out.write(buffer, 0, res);
-                } else {
-                    out.write(buffer, 0, (int) (len - total + res));
-                }
+            if (total <= len) {
+                out.write(buffer, 0, res);
+            } else {
+                out.write(buffer, 0, (int) (len - total + res));
             }
         }
     }
@@ -108,7 +111,7 @@ public class FileUtils {
             bs64 = bs64.replaceFirst("^data:.+?;base64,", "");
         }
 
-        File writeFile = genNoRepeatFile(".png", "uploads");
+        File writeFile = getUniqueFile(".png", "uploads");
 
         @Cleanup InputStream in = new ByteArrayInputStream(CypherUtils.decodeToBytes(bs64));
         @Cleanup OutputStream out = new FileOutputStream(writeFile);
@@ -129,15 +132,15 @@ public class FileUtils {
      * @param args   文件夹
      * @return 文件
      */
-    public static File genNoRepeatFile(String suffix, String... args) {
+    public static File getUniqueFile(String suffix, String... args) {
         File baseDir = staticFile(args);
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
 
-        File file = new File(baseDir, StringUtils.genUuidWithoutLine() + suffix);
+        File file = new File(baseDir, StringUtils.getUuidNoLine() + suffix);
         while (file.exists()) {
-            file = new File(baseDir, StringUtils.genUuidWithoutLine() + suffix);
+            file = new File(baseDir, StringUtils.getUuidNoLine() + suffix);
         }
 
         return file;
@@ -151,7 +154,7 @@ public class FileUtils {
      * @return 文件
      */
     public static File staticFile(String... args) {
-        return Paths.get(RESOURCE_DIR, args).toFile();
+        return Paths.get(ServerConstant.RESOURCE_DIR, args).toFile();
     }
 
     /**
@@ -188,16 +191,7 @@ public class FileUtils {
      * @return 文件文件名和后缀
      */
     public static String[] splitText(String filePath) {
-        return splitText(new File(filePath));
-    }
-
-    /**
-     * 将字符串切割为文件名和后缀
-     *
-     * @param file 文件
-     * @return 文件文件名和后缀
-     */
-    private static String[] splitText(File file) {
+        File file = new File(filePath);
         String fileName = file.getName();
         int index = fileName.lastIndexOf(".");
         if (index < 0) {

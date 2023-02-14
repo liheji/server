@@ -1,27 +1,27 @@
 package top.liheji.server.controller;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
+import com.aspose.slides.exceptions.NotSupportedException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.AntPathMatcher;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.HandlerMapping;
-import springfox.documentation.annotations.ApiIgnore;
+import top.liheji.server.constant.ServerConstant;
+import top.liheji.server.service.AccountService;
+import top.liheji.server.service.AuthAccountService;
+import top.liheji.server.service.AuthPermissionService;
+import top.liheji.server.service.CaptchaService;
+import top.liheji.server.constant.CaptchaTypeEnum;
 import top.liheji.server.pojo.*;
-import top.liheji.server.service.*;
 import top.liheji.server.util.*;
+import top.liheji.server.vo.IpInfoVo;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URI;
-import java.util.*;
+import java.util.Map;
 
 /**
  * @author : Galaxy
@@ -30,7 +30,6 @@ import java.util.*;
  * @project : serverPlus
  * @description : 实现用户登录前访问相关接口
  */
-@Slf4j
 @RestController
 public class AfterController {
     @Autowired
@@ -42,39 +41,8 @@ public class AfterController {
     @Autowired
     private AuthAccountService authAccountService;
 
-    /**
-     * 代理请求
-     * 使用selenium代理客户端请求
-     *
-     * @param reqMethod 请求方法
-     * @param req       Request
-     * @param resp      Response
-     * @throws Exception 异常
-     */
-    @GetMapping("proxy/**")
-    public void proxy(@RequestParam(value = "req_method", required = false) String reqMethod,
-                      HttpServletRequest req,
-                      HttpServletResponse resp) throws Exception {
-
-        final String path = req.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE).toString();
-        final String bestMatchingPattern = req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE).toString();
-        String url = new AntPathMatcher().extractPathWithinPattern(bestMatchingPattern, path);
-        @Cleanup("timeClose") DriverUtils driverUtils = DriverUtils.getInstance();
-
-        WebDriver driver = driverUtils.getWebDriver();
-        if ("post".equalsIgnoreCase(reqMethod)) {
-            URI uri = new URI(url);
-            driver.get(uri.getScheme() + "://" + uri.getAuthority());
-            ((JavascriptExecutor) driver).executeScript(WebUtils.paramToPostJs(req));
-        } else {
-            url = String.format("%s?%s", url, WebUtils.paramToGetStr(req));
-            driver.get(url);
-        }
-
-        resp.setCharacterEncoding("utf-8");
-        resp.setContentType("text/html");
-        resp.getWriter().write(driver.getPageSource());
-    }
+    @Autowired
+    AuthPermissionService authPermissionService;
 
     /**
      * 格式化IP
@@ -84,160 +52,96 @@ public class AfterController {
      * @return 查询结果
      */
     @GetMapping("ip")
-    public Map<String, Object> ip(@RequestParam(required = false) String query, HttpServletRequest req) {
-        Map<String, Object> map = WebUtils.getIp(req);
-        map.putAll(WebUtils.getIpInfo((String) map.get("ip"), query));
-        return map;
+    public R ip(@RequestParam(required = false) String query, HttpServletRequest req) {
+        String ip = WebUtils.parseIp(req);
+        IpInfoVo ipInfo = WebUtils.getIpInfo(ip, query);
+        if (ipInfo != null) {
+            return R.ok().put("data", ipInfo);
+        }
+        return R.error();
     }
 
     @GetMapping("status")
-    public Map<String, Object> status(@ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(3);
-        map.put("code", 0);
-        map.put("msg", "OK");
-        map.put("data", CypherUtils.encodeToBase64(JSONObject.toJSONBytes(current)));
-        return map;
+    public R status() {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        current.setPassword("");
+        return R.ok().put("data", CypherUtils.encodeToBase64(JSON.toJSONBytes(current)));
     }
 
     @DeleteMapping("authAccount")
-    public Map<String, Object> deleteAuthAccount(@RequestParam Integer id, @ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 0);
-        map.put("msg", "解绑完成");
-        boolean ret = id != null && authAccountService.remove(
+    public R deleteAuthAccount(@RequestBody Map<String, Object> param) {
+        String sId = param.get("id").toString();
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        boolean isDelete = authAccountService.remove(
                 new LambdaQueryWrapper<AuthAccount>()
                         .eq(AuthAccount::getAccountId, current.getId())
-                        .in(AuthAccount::getId, id)
+                        .eq(AuthAccount::getId, Long.parseLong(sId))
         );
-
-        if (!ret) {
-            map.put("code", 1);
-            map.put("msg", "解绑出错了");
-        }
-
-        return map;
-    }
-
-    @GetMapping("permissions")
-    public Map<String, Object> queryPermissions(@ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(3);
-
-        map.put("code", 0);
-        map.put("msg", "OK");
-
-        List<AuthGroup> groups = null;
-        List<AuthPermission> permissions = null;
-        if (!current.getIsSuperuser()) {
-            groups = current.getAuthGroups();
-            permissions = current.getAuthPermissions();
-        }
-
-        if (groups == null) {
-            groups = new ArrayList<>();
-        }
-        if (permissions == null) {
-            permissions = new ArrayList<>();
-        }
-
-        Set<Object> auths = new HashSet<>();
-        for (AuthGroup group : groups) {
-            List<AuthPermission> permissions0 = group.getAuthPermissions();
-            if (permissions0 != null) {
-                for (AuthPermission permission : permissions0) {
-                    auths.add(permission.getCodename());
-                }
-            }
-        }
-        for (AuthPermission permission : permissions) {
-            auths.add(permission.getCodename());
-        }
-
-        map.put("data", auths);
-
-        return map;
+        return isDelete ? R.ok() : R.error();
     }
 
     @GetMapping("sendCaptcha")
-    public Map<String, Object> sendCaptcha(String receiver, String property, @ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(4);
-        map.put("code", 1);
-        map.put("msg", "用户不存在");
-
-        if (current != null) {
-            switch (property) {
-                case "email":
-                    if (receiver.equals(current.getEmail())) {
-                        captchaService.sendEmailCaptcha(receiver);
-                        map.put("code", 0);
-                        map.put("msg", "发送成功");
-                    } else {
-                        map.put("code", 1);
-                        map.put("msg", "验证失败");
-                    }
-                    break;
-                case "mobile":
-                    if (receiver.equals(current.getMobile())) {
-                        // 发送手机验证码
-                        //  captchaService.sendMobileCaptcha(receiver);
-                        map.put("code", 1);
-                        map.put("msg", "暂不支持手机号验证");
-                    } else {
-                        map.put("code", 1);
-                        map.put("msg", "验证失败");
-                    }
-                    break;
-                default:
-                    throw new RuntimeException("所选类型不存在");
+    public R sendCaptcha(String receiver, String property) throws Exception {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        CaptchaTypeEnum captchaType = CaptchaTypeEnum.from(property);
+        if (ObjectUtils.isEmpty(current)
+                || ObjectUtils.isEmpty(captchaType)
+                || ObjectUtils.isEmpty(receiver)) {
+            throw new IllegalArgumentException("参数错误，请检查");
+        }
+        switch (captchaType) {
+            case EMAIL: {
+                if (ObjectUtils.isEmpty(current.getEmail()) || receiver.equals(current.getEmail())) {
+                    captchaService.sendCaptcha(current.getUsername(), receiver, CaptchaTypeEnum.EMAIL);
+                } else {
+                    throw new RuntimeException("验证失败");
+                }
             }
+            break;
+            case MOBILE: {
+                if (ObjectUtils.isEmpty(current.getMobile()) || receiver.equals(current.getMobile())) {
+                    return R.error("暂不支持手机号验证");
+                    // 发送手机验证码
+                    //  captchaService.sendCaptcha(current.getUsername(), receiver, CaptchaTypeEnum.MOBILE);
+                } else {
+                    throw new RuntimeException("验证失败");
+                }
+            }
+            default:
+                throw new IllegalArgumentException("参数错误，请检查");
         }
 
-        return map;
+        return R.ok();
     }
 
     @GetMapping("socketCaptcha")
     @PreAuthorize("hasAuthority('use_web_socket')")
-    public Map<String, Object> genWebSocketCaptcha(@ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(3);
-
-        map.put("code", 0);
-        map.put("msg", "密钥生成成功");
-        map.put("key", captchaService.genSecret(current.getUsername(), 5 * 60));
-
-        return map;
+    public R genWebSocketCaptcha() {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        return R.ok().put("key", captchaService.genCaptcha(current.getUsername(), CaptchaTypeEnum.GENERAL_SECRET));
     }
 
     @GetMapping("registerCaptcha")
     @PreAuthorize("hasAuthority('add_account')")
-    public Map<String, Object> genRegisterCaptcha(@ApiIgnore @RequestAttribute("account") Account current) {
-        Map<String, Object> map = new HashMap<>(3);
-
-        map.put("code", 0);
-        map.put("msg", "注册码生成成功");
-        map.put("key", captchaService.genSecret(current.getUsername(), 3 * 24 * 60 * 60));
-
-        return map;
+    public R genRegisterCaptcha() throws Exception {
+        Account current = ServerConstant.LOCAL_ACCOUNT.get();
+        if (current == null) {
+            throw new RuntimeException("请先登录");
+        }
+        return R.ok().put("key", captchaService.genCaptcha(null, CaptchaTypeEnum.REGISTER_SECRET));
     }
 
     @PostMapping("format")
     @ResponseBody
     @PreAuthorize("hasAuthority('use_format')")
-    public Map<String, Object> uploadAndFormatFile(@RequestParam("file") MultipartFile file) throws Exception {
-        Map<String, Object> map = new HashMap<>(4);
-        //处理excel文件
-        map.put("code", 1);
-        map.put("msg", "参数或格式错误(注意使用UTF-8编码)");
-
+    public R uploadAndFormatFile(@RequestParam("file") MultipartFile file) throws Exception {
         @Cleanup InputStream in = file.getInputStream();
 
         File genFile = HrbeuUtils.dealWakeupSchedule(in, file.getOriginalFilename());
         if (genFile == null) {
-            map.put("msg", "仅支持xls,xlsx,html格式");
-        } else {
-            map.put("code", 0);
-            map.put("msg", "格式化完成");
-            map.put("fileName", genFile.getName());
+            throw new NotSupportedException("仅支持xls,xlsx,html格式");
         }
 
-        return map;
+        return R.ok().put("fileName", genFile.getName());
     }
 }

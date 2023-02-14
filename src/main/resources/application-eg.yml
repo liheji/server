@@ -9,6 +9,9 @@ server:
 spring:
   jmx:
     enabled: false
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
   servlet:
     multipart:
       enabled: true
@@ -19,7 +22,6 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/数据库名称?characterEncoding=utf-8&useSSL=false&allowMultiQueries=true
     username: 用户名
     password: 密码
-    type: com.alibaba.druid.pool.DruidDataSource
   mail:
     host: smtp.qq.com
     username: 邮箱账号
@@ -31,21 +33,26 @@ spring:
         smtp:
           socketFactoryClass: javax.net.ssl.SSLSocketFactory
   redis:
-    database: 1
+    database: 0
     host: 127.0.0.1
     port: 6379
     timeout: 30000
     connectTimeout: 60000
-    lettuce:
-      pool:
-        max-active: 10
-        max-wait: -1
-        min-idle: 1
     jedis:
       pool:
-        max-active: 10
+        max-active: 1000
         max-wait: -1
-        min-idle: 1
+        max-idle: 10
+        min-idle: 5
+  cache:
+    type: redis
+    redis:
+      # 如果指定了前缀就用我们指定的前缀，如果没有就默认使用缓存的名字作为前缀
+      use-key-prefix: true
+      # 是否缓存空值，防止缓存穿透
+      cache-null-values: true
+      # 缓存的过期时间，单位是毫秒
+      time-to-live: 86400000
   security:
     oauth2:
       client:
@@ -61,15 +68,27 @@ spring:
             provider: qq
             client-name: QQ登录
             authorization-grant-type: authorization_code
-            client-authentication-method: post
             scope: get_user_info
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+          baidu:
+            client-id: KEY
+            client-secret: SECRET
+            provider: baidu
+            client-name: 百度登录
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_basic
+            scope: basic
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:
           qq:
             authorization-uri: https://graph.qq.com/oauth2.0/authorize
             token-uri: https://graph.qq.com/oauth2.0/token
-            # 配置为 QQ获取 OpenId的 Url
-            user-info-uri: https://graph.qq.com/oauth2.0/me
+            user-info-uri: https://graph.qq.com/user/get_user_info
+            user-name-attribute: "openid"
+          baidu:
+            authorization-uri: https://openapi.baidu.com/oauth/2.0/authorize?confirm_login=1&qrcode=1
+            token-uri: https://openapi.baidu.com/oauth/2.0/token
+            user-info-uri: https://openapi.baidu.com/rest/2.0/passport/users/getInfo
             user-name-attribute: "openid"
 
 mybatis-plus:
@@ -85,6 +104,7 @@ mybatis-plus:
 
 logging:
   level:
+    root: info
     top.liheji.server: info
   config: classpath:log4j2.xml
 
@@ -101,15 +121,15 @@ permission:
       change: 修改所有用户信息
       delete: 逻辑删除用户
       view: 查看所有用户信息
-    - table: server_file_info
+    - table: server_upload_info
       add: 上传文件
       delete: 删除上传的文件
       view: 查看上传的文件
       download: 下载上传的文件
-    - table: server_pass_token
-      all: 特殊通行Token
     - table: server_web_socket
       use: 使用WebSocket
     - table: server_format
       use: 使用课程格式化
+    - table: server_latex_account
+      use: 使用Latex公式识别
   create: false
