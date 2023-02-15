@@ -1,9 +1,7 @@
 package top.liheji.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
-import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.AuthGroup;
 import top.liheji.server.pojo.AuthPermission;
 import top.liheji.server.pojo.AuthGroupPermissions;
@@ -17,7 +15,6 @@ import java.util.List;
  * @Entity top.liheji.server.pojo.AuthGroupPermissions
  */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface AuthGroupPermissionsMapper extends BaseMapper<AuthGroupPermissions> {
 
     /**

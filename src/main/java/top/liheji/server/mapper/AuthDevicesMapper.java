@@ -1,9 +1,7 @@
 package top.liheji.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
-import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.AuthDevices;
 
 /**
@@ -13,7 +11,6 @@ import top.liheji.server.pojo.AuthDevices;
 * @Entity top.liheji.pojo.PersistentDevices
 */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface AuthDevicesMapper extends BaseMapper<AuthDevices> {
 
 }

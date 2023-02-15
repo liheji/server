@@ -121,15 +121,15 @@ permission:
       change: 修改所有用户信息
       delete: 逻辑删除用户
       view: 查看所有用户信息
-    - table: server_upload_info
+    - table: server_uploadinfo
       add: 上传文件
       delete: 删除上传的文件
       view: 查看上传的文件
       download: 下载上传的文件
-    - table: server_web_socket
-      use: 使用WebSocket
-    - table: server_format
-      use: 使用课程格式化
-    - table: server_latex_account
+    - table: latex_account
       use: 使用Latex公式识别
+    - table: server_websocket
+      use: 使用WebSocket(不存在的表)
+    - table: server_wakeup
+      use: 使用WakeUp格式化(不存在的表)
   create: false

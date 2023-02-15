@@ -1,4 +1,4 @@
-package top.liheji.server.controller;
+package top.liheji.server.config.mybatis.handler.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;

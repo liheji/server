@@ -4,8 +4,6 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="top.liheji.server.mapper.UploadInfoMapper">
 
-    <cache-ref namespace="top.liheji.server.mapper.UploadInfoMapper"/>
-
     <resultMap id="BaseResultMap" type="top.liheji.server.pojo.UploadInfo">
         <id property="id" column="id"/>
         <result property="fileName" column="file_name"/>

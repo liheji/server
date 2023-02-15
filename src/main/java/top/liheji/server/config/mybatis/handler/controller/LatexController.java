@@ -1,4 +1,4 @@
-package top.liheji.server.controller;
+package top.liheji.server.config.mybatis.handler.controller;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class LatexController {
     private LatexAccountService latexAccountService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('use_latex_account')")
+    @PreAuthorize("hasAuthority('use_latexaccount')")
     public R obtainLatexAccount(HttpServletRequest request) {
         LatexAccount latexAccount = latexAccountService.getLatexAccount(request);
         if (latexAccount == null) {
@@ -34,13 +34,13 @@ public class LatexController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('use_latex_account')")
+    @PreAuthorize("hasAuthority('use_latexaccount')")
     public R disableLatexAccount(String username) {
         LambdaUpdateWrapper<LatexAccount> updateWrapper =
                 new LambdaUpdateWrapper<LatexAccount>()
                         .eq(LatexAccount::getUsername, username)
                         .set(LatexAccount::getIsAvailable, false);
-        boolean isUpdate = latexAccountService.update(updateWrapper);
-        return isUpdate ? R.ok() : R.error();
+        latexAccountService.update(updateWrapper);
+        return R.ok();
     }
 }

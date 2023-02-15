@@ -1,8 +1,6 @@
 package top.liheji.server.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.CacheNamespace;
-import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.LatexAccount;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -13,7 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity top.liheji.server.pojo.LatexAccount
 */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface LatexAccountMapper extends BaseMapper<LatexAccount> {
 
 }

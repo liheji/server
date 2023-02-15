@@ -82,9 +82,6 @@ public class HrbeuUtils {
         File newFile = FileUtils.getUniqueFile(".csv", "uploads");
         wk.save(newFile.getAbsolutePath(), com.aspose.cells.SaveFormat.CSV);
 
-        //定时删除生成的文件课表文件
-        new Timer().schedule(new DeleteTask(newFile), 10 * 60 * 1000);
-
         return newFile;
     }
 
@@ -258,26 +255,5 @@ public class HrbeuUtils {
             }
         }
         return resCourseList;
-    }
-
-    private static class DeleteTask extends TimerTask {
-        private final File[] files;
-
-        public DeleteTask(File... files) {
-            this.files = files;
-        }
-
-        @Override
-        public void run() {
-            for (File file : files) {
-                for (int i = 0; file.exists() && !file.delete() && i < 4; i++) {
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
     }
 }

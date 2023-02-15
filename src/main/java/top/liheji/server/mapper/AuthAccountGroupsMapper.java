@@ -1,9 +1,7 @@
 package top.liheji.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
-import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.AuthAccountGroups;
 import top.liheji.server.pojo.AuthGroup;
@@ -17,7 +15,6 @@ import java.util.List;
  * @Entity top.liheji.server.pojo.AuthAccountGroups
  */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface AuthAccountGroupsMapper extends BaseMapper<AuthAccountGroups> {
 
     /**

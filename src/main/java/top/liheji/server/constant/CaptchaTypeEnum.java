@@ -37,9 +37,9 @@ public enum CaptchaTypeEnum {
         this.msg = msg;
     }
 
-    public static CaptchaTypeEnum from(String from) {
+    public static CaptchaTypeEnum from(String code) {
         for (CaptchaTypeEnum value : values()) {
-            if (value.code.equals(from)) {
+            if (value.code.equals(code)) {
                 return value;
             }
         }

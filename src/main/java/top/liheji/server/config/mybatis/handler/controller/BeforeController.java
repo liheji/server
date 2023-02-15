@@ -1,4 +1,4 @@
-package top.liheji.server.controller;
+package top.liheji.server.config.mybatis.handler.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +11,7 @@ import top.liheji.server.service.CaptchaService;
 import top.liheji.server.util.*;
 import top.liheji.server.vo.ForgetVo;
 import top.liheji.server.vo.RegisterVo;
+import top.liheji.server.vo.SendCaptchaVo;
 
 /**
  * @author : Galaxy
@@ -43,19 +44,17 @@ public class BeforeController {
             return R.error("校验失败，请检查");
         }
         account.setPassword(forget.bcrypt());
-        boolean isUpdate = accountService.updateById(account);
+        accountService.updateById(account);
 
-        return isUpdate ? R.ok() : R.error();
+        return R.ok();
     }
 
     @PostMapping("register")
     public R register(@RequestBody RegisterVo register) {
         if (captchaService.checkCaptcha(null, register.getLicence())) {
             Account account = register.toAccount();
-            boolean isSave = accountService.save(account);
-            if (isSave) {
-                return R.ok();
-            }
+            accountService.save(account);
+            return R.ok();
         }
 
         return R.error();
@@ -63,42 +62,23 @@ public class BeforeController {
 
     @GetMapping("imageCaptcha")
     public R imgCaptcha() {
-        return R.ok().put("data", captchaService.genImgCaptcha(null, CaptchaTypeEnum.GENERAL));
+        String captcha = captchaService.genImgCaptcha(null, CaptchaTypeEnum.GENERAL);
+        return R.ok().put("data", captcha);
     }
 
     @GetMapping("sendCaptcha")
-    public R sendCaptcha(String receiver, String property) {
-        Account account = accountService.getOne(
-                new LambdaQueryWrapper<Account>()
-                        .eq(Account::getUsername, receiver)
-                        .or()
-                        .eq(Account::getEmail, receiver)
-                        .or()
-                        .eq(Account::getMobile, receiver)
-        );
-        CaptchaTypeEnum captchaType = CaptchaTypeEnum.from(property);
-        if (account == null || captchaType == null) {
-            throw new IllegalArgumentException("参数错误，请检查");
+    public R sendCaptcha(@RequestParam SendCaptchaVo sendVo) {
+        try {
+            CaptchaTypeEnum typeEnum = sendVo.beforeSecurityCheck();
+            captchaService.sendCaptcha(null, sendVo.getReceiver(), typeEnum);
+            return R.ok();
+        } catch (UnsupportedOperationException e) {
+            return R.error(e.getMessage());
         }
-        switch (captchaType) {
-            case EMAIL: {
-                captchaService.sendCaptcha("", receiver, CaptchaTypeEnum.EMAIL);
-            }
-            break;
-            case MOBILE: {
-                return R.error("暂不支持手机号验证");
-                // 发送手机验证码
-                //  captchaService.sendCaptcha("", receiver, CaptchaTypeEnum.MOBILE);
-            }
-            default:
-                throw new IllegalArgumentException("参数错误，请检查");
-        }
-
-        return R.ok();
     }
 
-    @GetMapping("uniqueCheck")
-    public R uniqueCheck(String param) {
+    @GetMapping("accountUnique")
+    public R accountUnique(String param) {
         long count = accountService.count(
                 new LambdaQueryWrapper<Account>()
                         .eq(Account::getUsername, param)
@@ -107,7 +87,6 @@ public class BeforeController {
                         .or()
                         .eq(Account::getEmail, param)
         );
-
-        return R.ok().put("result", count > 0);
+        return count > 0 ? R.ok() : R.error();
     }
 }

@@ -105,7 +105,8 @@ public class LatexAccountServiceImpl extends ServiceImpl<LatexAccountMapper, Lat
         requestHeaders.add("User-Agent", userAgent);
         HttpEntity<LatexRegisterVo> entity = new HttpEntity<>(latexVo, requestHeaders);
         // 请求服务端添加玩家
-        JSONObject data = restTemplate.postForObject(REG_BY_ACCOUNT_ACTION, entity, JSONObject.class);
+        String dataStr = restTemplate.postForObject(REG_BY_ACCOUNT_ACTION, entity, String.class);
+        JSONObject data = JSONObject.parseObject(dataStr);
         if (ObjectUtils.isEmpty(data) || data.getInteger("result").equals(1)) {
             return null;
         }

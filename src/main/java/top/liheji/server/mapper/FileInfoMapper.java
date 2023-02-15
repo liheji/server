@@ -1,9 +1,7 @@
 package top.liheji.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.CacheNamespace;
 import org.apache.ibatis.annotations.Mapper;
-import top.liheji.server.config.mybatis.cache.MybatisPlusRedisCache;
 import top.liheji.server.pojo.FileInfo;
 
 /**
@@ -13,7 +11,6 @@ import top.liheji.server.pojo.FileInfo;
  * @Entity top.liheji.server.pojo.FileInfo
  */
 @Mapper
-@CacheNamespace(implementation = MybatisPlusRedisCache.class)
 public interface FileInfoMapper extends BaseMapper<FileInfo> {
 
 }

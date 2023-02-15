@@ -1,4 +1,4 @@
-package top.liheji.server.config.property;
+package top.liheji.server.config.prepare.property;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,6 +20,8 @@ import java.util.List;
 @PropertySource("classpath:application.yml")
 @ConfigurationProperties(prefix = "permission")
 public class PermissionProperty {
+    private String[] trimPrefix = {"server", "auth"};
+
     private Boolean create = false;
     private List<Permission> list;
 
@@ -30,13 +32,12 @@ public class PermissionProperty {
         private String change;
         private String delete;
         private String view;
-        private String use;
-        private String download;
+
         private String all;
 
-        public String getSubTable() {
-            return table.substring(table.indexOf("_"));
-        }
+        // all 权限不包含下方的特殊权限
+        private String use;
+        private String download;
 
         public void setAll(String all) {
             this.add = "添加" + all;
@@ -45,6 +46,16 @@ public class PermissionProperty {
             this.view = "查看" + all;
             this.all = null;
         }
+    }
+
+    public String getTableSuffix(Permission permission) {
+        String table = permission.getTable();
+        for (String prefix : trimPrefix) {
+            if (table.startsWith(prefix)) {
+                table = table.replace(prefix, "");
+            }
+        }
+        return "_" + table.replaceAll("_", "").toLowerCase();
     }
 }
 

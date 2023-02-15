@@ -1,5 +1,6 @@
 package top.liheji.server.util;
 
+import com.alibaba.fastjson2.JSON;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.OperatingSystem;
@@ -79,7 +80,8 @@ public class WebUtils {
 
         RestTemplate restTemplate = BeanUtils.getBean(RestTemplate.class);
         String url = "https://whois.pconline.com.cn/ipJson.jsp?level=3&json=true&ip=" + query.trim();
-        return restTemplate.getForObject(url, IpInfoVo.class);
+        String ipInfoStr = restTemplate.getForObject(url, String.class);
+        return JSON.parseObject(ipInfoStr, IpInfoVo.class);
     }
 
     /**
@@ -158,6 +160,10 @@ public class WebUtils {
         }
     }
 
+    private static String toWord(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+
     /**
      * 返回JSON数据
      *
@@ -211,15 +217,5 @@ public class WebUtils {
         } catch (Exception ignored) {
         }
         return String.format(builder.toString(), path);
-    }
-
-    /**
-     * 将英文转化为单词样式（eg: good => Good）
-     *
-     * @param str 转换前的字符
-     * @return 转化完成的字符
-     */
-    private static String toWord(String str) {
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
 }

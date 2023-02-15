@@ -1,4 +1,4 @@
-package top.liheji.server.controller;
+package top.liheji.server.config.mybatis.handler.controller;
 
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -48,7 +48,7 @@ public class UploadInfoController {
 
 
     @GetMapping
-    @PreAuthorize("hasAuthority('view_upload_info')")
+    @PreAuthorize("hasAuthority('view_uploadinfo')")
     public R queryUploadInfo(@RequestParam Map<String, Object> params) {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         PageUtils page = uploadInfoService.queryPage(params, current.getId());
@@ -56,7 +56,7 @@ public class UploadInfoController {
     }
 
     @DeleteMapping
-    @PreAuthorize("hasAuthority('delete_upload_info')")
+    @PreAuthorize("hasAuthority('delete_uploadinfo')")
     public R deleteUploadInfo(@RequestBody List<Long> fileIds) {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         uploadInfoService.getBaseMapper().delete(
@@ -68,7 +68,7 @@ public class UploadInfoController {
     }
 
     @PostMapping("verify")
-    @PreAuthorize("hasAuthority('add_upload_info')")
+    @PreAuthorize("hasAuthority('add_uploadinfo')")
     public R checkUploadInfo(FileCheckVo checkVo) {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         UploadInfoVo result = uploadInfoService.getUploadInfoVo(checkVo, current.getId());
@@ -79,7 +79,7 @@ public class UploadInfoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('add_upload_info')")
+    @PreAuthorize("hasAuthority('add_uploadinfo')")
     public R addUploadInfo(@RequestParam("file") MultipartFile file,
                            @RequestHeader(value = "UPLOAD-TOKEN", defaultValue = "") String uToken) throws Exception {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
@@ -95,7 +95,7 @@ public class UploadInfoController {
     }
 
     @GetMapping("download/{param:.+}")
-    @PreAuthorize("hasAuthority('download_upload_info')")
+    @PreAuthorize("hasAuthority('download_uploadinfo')")
     public void downloadFile(@PathVariable String param,
                              @RequestHeader(value = "Range", required = false) String range,
                              HttpServletResponse resp) throws IOException {
@@ -134,7 +134,7 @@ public class UploadInfoController {
     }
 
     @GetMapping("preview/{param:.+}")
-    @PreAuthorize("hasAuthority('view_upload_info')")
+    @PreAuthorize("hasAuthority('view_uploadinfo')")
     public void previewFile(@PathVariable String param,
                             HttpServletResponse resp) throws Exception {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();

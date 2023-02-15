@@ -1,6 +1,7 @@
 package top.liheji.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import top.liheji.server.pojo.Account;
 import top.liheji.server.pojo.AuthDevices;
 
 /**
@@ -11,4 +12,6 @@ import top.liheji.server.pojo.AuthDevices;
 public interface AuthDevicesService extends IService<AuthDevices> {
 
     void invalidateDevice(AuthDevices authDevices);
+
+    Account updateLoginInfo(AuthDevices device);
 }
