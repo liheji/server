@@ -27,9 +27,9 @@ public class UploadInfoVo implements Serializable {
     /**
      * 外键
      */
-    private Integer fileInfoId;
+    private Long fileInfoId;
 
-    private Integer accountId;
+    private Long accountId;
 
     /**
      * 非数据库字段

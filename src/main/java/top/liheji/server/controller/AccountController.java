@@ -1,4 +1,4 @@
-package top.liheji.server.config.mybatis.handler.controller;
+package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -109,7 +109,7 @@ public class AccountController {
 
     @PutMapping("status")
     @PreAuthorize("hasAuthority('delete_account')")
-    public R deleteAccount(@RequestBody List<Integer> accountIds) {
+    public R deleteAccount(@RequestBody List<Long> accountIds) {
         accountService.update(
                 new LambdaUpdateWrapper<Account>()
                         .setSql("is_enabled = !is_enabled")

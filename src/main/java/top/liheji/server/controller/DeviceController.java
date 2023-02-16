@@ -1,4 +1,4 @@
-package top.liheji.server.config.mybatis.handler.controller;
+package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.BeanUtils;
@@ -49,8 +49,8 @@ public class DeviceController {
     }
 
     @PutMapping
-    public R changeDevice(@RequestBody Map<String, Object> param, HttpSession session) {
-        String type = param.get("type").toString();
+    public R changeDevice(@RequestBody Map<String, Object> params, HttpSession session) {
+        String type = params.get("type").toString();
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         AuthDevices persistentDevices = authDevicesService.getOne(
                 new LambdaQueryWrapper<AuthDevices>()

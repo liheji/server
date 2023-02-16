@@ -1,4 +1,4 @@
-package top.liheji.server.config.mybatis.handler.controller;
+package top.liheji.server.controller;
 
 import com.alibaba.fastjson2.JSON;
 import com.aspose.slides.exceptions.NotSupportedException;
@@ -85,7 +85,7 @@ public class AfterController {
     }
 
     @GetMapping("sendCaptcha")
-    public R sendCaptcha(@RequestParam SendCaptchaVo sendVo) {
+    public R sendCaptcha(SendCaptchaVo sendVo) {
         try {
             Account current = ServerConstant.LOCAL_ACCOUNT.get();
             CaptchaTypeEnum typeEnum = sendVo.afterSecurityCheck();

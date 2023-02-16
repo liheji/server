@@ -1,4 +1,4 @@
-package top.liheji.server.config.mybatis.handler.controller;
+package top.liheji.server.controller;
 
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -69,7 +69,7 @@ public class UploadInfoController {
 
     @PostMapping("verify")
     @PreAuthorize("hasAuthority('add_uploadinfo')")
-    public R checkUploadInfo(FileCheckVo checkVo) {
+    public R checkUploadInfo(@RequestBody FileCheckVo checkVo) {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         UploadInfoVo result = uploadInfoService.getUploadInfoVo(checkVo, current.getId());
         if (result == null) {

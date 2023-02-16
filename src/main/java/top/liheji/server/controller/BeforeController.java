@@ -1,4 +1,4 @@
-package top.liheji.server.config.mybatis.handler.controller;
+package top.liheji.server.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +67,7 @@ public class BeforeController {
     }
 
     @GetMapping("sendCaptcha")
-    public R sendCaptcha(@RequestParam SendCaptchaVo sendVo) {
+    public R sendCaptcha(SendCaptchaVo sendVo) {
         try {
             CaptchaTypeEnum typeEnum = sendVo.beforeSecurityCheck();
             captchaService.sendCaptcha(null, sendVo.getReceiver(), typeEnum);
