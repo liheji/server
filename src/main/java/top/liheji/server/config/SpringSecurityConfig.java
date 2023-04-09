@@ -21,16 +21,18 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import top.liheji.server.config.auth.constant.AuthConstant;
 import top.liheji.server.config.auth.remember.RedisTokenBasedRememberMeServices;
+import top.liheji.server.config.filter.SetComDataFilter;
+import top.liheji.server.config.filter.SetSharedDataFilter;
 import top.liheji.server.config.oauth.constant.OAuthType;
 import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
 import top.liheji.server.config.filter.CaptchaFilter;
-import top.liheji.server.config.filter.ParamSetFilter;
 import top.liheji.server.config.oauth.client.MultipleAuthorizationCodeTokenResponseClient;
 import top.liheji.server.config.oauth.client.BaiduAuthorizationCodeTokenResponseClient;
 import top.liheji.server.config.oauth.client.QQAuthorizationCodeTokenResponseClient;
@@ -67,7 +69,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private CaptchaFilter captchaFilter;
 
     @Autowired
-    private ParamSetFilter paramSetFilter;
+    private SetComDataFilter setComDataFilter;
+
+    @Autowired
+    private SetSharedDataFilter setSharedDataFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -93,16 +98,17 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // 这些 URL需要拦截并识别验证码
         captchaFilter.setMatchers("/login", "/before/forget", "/before/register");
         // 设置拦截URL中需要排除验证的特殊项
-        paramSetFilter.setExcludeMatchers("/login*", "/before/**");
+        setSharedDataFilter.setExcludeMatchers("/login*", "/before/**");
         // 设置用户参数过滤器
         if (debug) {
             String[] debugArray = new String[]{"/doc.html*", "/webjars/**", "/swagger*/**", "/v2/**"};
-            paramSetFilter.addExcludeMatchers(debugArray);
+            setSharedDataFilter.addExcludeMatchers(debugArray);
             http.authorizeRequests().antMatchers(debugArray).permitAll();
         }
 
-        http.addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(paramSetFilter, UsernamePasswordAuthenticationFilter.class)
+        http.addFilterBefore(setComDataFilter, LogoutFilter.class)
+                .addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(setSharedDataFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         // 路径拦截设置

@@ -2,12 +2,10 @@ package top.liheji.server.util;
 
 import com.jcraft.jsch.*;
 import lombok.Cleanup;
+import top.liheji.server.constant.MediaType;
 import top.liheji.server.vo.FileItemVo;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -155,6 +153,38 @@ public class SshUtils {
         dirList.addAll(fileList);
 
         return dirList;
+    }
+
+    /**
+     * 仅支持文本文件
+     *
+     * @param path 文件路径
+     * @return 文件内容
+     * @throws Exception
+     */
+    public ByteArrayOutputStream view(String path) throws Exception {
+        MediaType mediaType = MediaType.guessMediaTypeClass(path);
+        if (!mediaType.isText()) {
+            return null;
+        }
+        try {
+            ChannelSftp sftp = (ChannelSftp) this.session.openChannel("sftp");
+            SftpATTRS lstat = sftp.lstat(path);
+            // 文件大小限制
+            if (lstat.getSize() > 1024 * 1024 * 10) {
+                return null;
+            }
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            // 进入目录
+            sftp.get(path, os);
+            return os;
+        } catch (SftpException sException) {
+            if (sException.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+                return null;
+            } else {
+                throw sException;
+            }
+        }
     }
 
     private boolean upload(String path, InputStream in, String fileName) throws Exception {

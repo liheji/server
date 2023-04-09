@@ -12,7 +12,7 @@ import java.io.Serializable;
  * @description :
  */
 @Data
-public class SshFileListVo implements Serializable {
+public class SshServerVo implements Serializable {
     private static final long serialVersionUID = -1024254732983686117L;
     private Integer action;
     private String path;

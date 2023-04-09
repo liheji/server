@@ -16,10 +16,8 @@ import top.liheji.server.service.CaptchaService;
 import top.liheji.server.constant.CaptchaTypeEnum;
 import top.liheji.server.pojo.*;
 import top.liheji.server.util.*;
-import top.liheji.server.vo.IpInfoVo;
 import top.liheji.server.vo.SendCaptchaVo;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -53,23 +51,6 @@ public class AfterController {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         current.setPassword("");
         return R.ok().put("data", CypherUtils.encodeToBase64(JSON.toJSONBytes(current)));
-    }
-
-    /**
-     * 格式化IP
-     *
-     * @param query 查询IP
-     * @param req   Request
-     * @return 查询结果
-     */
-    @GetMapping("ip")
-    public R ip(@RequestParam(required = false) String query, HttpServletRequest req) {
-        String ip = WebUtils.parseIp(req);
-        IpInfoVo ipInfo = WebUtils.getIpInfo(ip, query);
-        if (ipInfo != null) {
-            return R.ok().put("data", ipInfo);
-        }
-        return R.error();
     }
 
     @DeleteMapping("authAccount")

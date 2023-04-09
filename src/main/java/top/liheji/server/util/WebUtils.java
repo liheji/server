@@ -1,6 +1,5 @@
 package top.liheji.server.util;
 
-import com.alibaba.fastjson2.JSON;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.OperatingSystem;
@@ -8,15 +7,11 @@ import eu.bitwalker.useragentutils.UserAgent;
 import lombok.Cleanup;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
-import org.springframework.web.client.RestTemplate;
 import top.liheji.server.pojo.AuthDevices;
-import top.liheji.server.vo.IpInfoVo;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -63,42 +58,6 @@ public class WebUtils {
         }
 
         return ip;
-    }
-
-
-    /**
-     * 获取请求IP地址
-     *
-     * @param fromIp 请求IP
-     * @param query  查询IP
-     * @return 返回信息
-     */
-    public static IpInfoVo getIpInfo(String fromIp, @Nullable String query) {
-        if (!isIpv4(query)) {
-            query = fromIp;
-        }
-
-        RestTemplate restTemplate = BeanUtils.getBean(RestTemplate.class);
-        String url = "https://whois.pconline.com.cn/ipJson.jsp?level=3&json=true&ip=" + query.trim();
-        String ipInfoStr = restTemplate.getForObject(url, String.class);
-        return JSON.parseObject(ipInfoStr, IpInfoVo.class);
-    }
-
-    /**
-     * IP地址验证
-     *
-     * @param ip IP地址
-     * @return IP地址是否正确
-     */
-    public static boolean isIpv4(@Nullable String ip) {
-        if (ip == null || ip.trim().isEmpty()) {
-            return false;
-        }
-        try {
-            return InetAddress.getByName(ip.trim()) instanceof Inet4Address;
-        } catch (Exception ignored) {
-            return false;
-        }
     }
 
     /**

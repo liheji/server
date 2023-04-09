@@ -154,7 +154,7 @@ public class FileUtils {
      * @return 文件
      */
     public static File staticFile(String... args) {
-        return Paths.get(ServerConstant.RESOURCE_DIR, args).toFile();
+        return Paths.get(ServerConstant.STATIC_DIR, args).toFile();
     }
 
     /**
@@ -165,15 +165,17 @@ public class FileUtils {
      * @return 文件
      */
     public static File resourceFile(String... args) {
-        File resFile;
+        File resFile = null;
         try {
             resFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX);
         } catch (Exception e) {
             URL url = Thread.currentThread().getContextClassLoader().getResource("");
             if (url != null) {
                 resFile = new File(url.getPath());
-            } else {
-                resFile = null;
+            }
+        } finally {
+            if (resFile == null || resFile.exists()) {
+                resFile = new File(ServerConstant.RESOURCE_DIR);
             }
         }
 

@@ -5,7 +5,7 @@
         <!--2022-01-09 13:23:23.237 DEBUG -&#45;&#45; [                main] a.b(xx.java:56) : Running with Spring Boot v2.x, Spring v5.x-->
         <Property name="log_pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p --- [%20t] %l : %m%n"/>
         <!-- 生成环境保存日志文件目录 -->
-        <Property name="file_path" value="${sys:catalina.home}/logs/server"/>
+        <Property name="file_path" value="/data/logs"/>
         <!-- 测试环境保存日志文件目录 -->
         <!--                        <Property name="file_path" value="server_logs"/>-->
         <!-- 日志文件的最大容量，超过该值就进行备份 -->

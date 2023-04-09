@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * @author : Galaxy
@@ -39,10 +38,6 @@ public class CaptchaFilter extends OncePerRequestFilter {
     private List<String> matchers;
 
     private List<String> excludeMatchers;
-
-    private Function<HttpServletRequest, Boolean> otherMatcherFunction;
-
-    private Function<HttpServletRequest, Boolean> excludeMatcherFunction;
 
     public static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
@@ -75,14 +70,6 @@ public class CaptchaFilter extends OncePerRequestFilter {
 
     public void setCaptchaParameter(String captchaParameter) {
         this.captchaParameter = captchaParameter;
-    }
-
-    public void setOtherMatcherFunction(Function<HttpServletRequest, Boolean> otherMatcherFunction) {
-        this.otherMatcherFunction = otherMatcherFunction;
-    }
-
-    public void setExcludeMatcherFunction(Function<HttpServletRequest, Boolean> excludeMatcherFunction) {
-        this.excludeMatcherFunction = excludeMatcherFunction;
     }
 
     @Override
@@ -147,9 +134,6 @@ public class CaptchaFilter extends OncePerRequestFilter {
                 }
             }
         }
-        if (this.otherMatcherFunction != null) {
-            return this.otherMatcherFunction.apply(request);
-        }
         return false;
     }
 
@@ -167,9 +151,6 @@ public class CaptchaFilter extends OncePerRequestFilter {
                     return true;
                 }
             }
-        }
-        if (this.excludeMatcherFunction != null) {
-            return this.excludeMatcherFunction.apply(request);
         }
         return false;
     }

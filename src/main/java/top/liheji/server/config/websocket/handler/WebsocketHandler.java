@@ -12,13 +12,13 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import top.liheji.server.config.websocket.vo.SocketSessionVo;
 import top.liheji.server.config.websocket.vo.SshConnectVo;
-import top.liheji.server.config.websocket.vo.SshFileListVo;
+import top.liheji.server.config.websocket.vo.SshServerVo;
 import top.liheji.server.util.FileUtils;
 import top.liheji.server.util.R;
 import top.liheji.server.util.SshUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -114,8 +114,22 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
             case FILE_LIST:
                 try {
                     SshUtils ssh = sessionVo.getSsh();
-                    SshFileListVo fileListVo = JSON.parseObject(payload, SshFileListVo.class);
-                    r.put("data", ssh.genInfoList(fileListVo.getPath()));
+                    SshServerVo serverVo = JSON.parseObject(payload, SshServerVo.class);
+                    r.put("data", ssh.genInfoList(serverVo.getPath()));
+                } catch (Exception err) {
+                    r = R.error(err.getMessage()).put("action", action.getCode());
+                }
+                break;
+            case FILE_VIEW:
+                try {
+                    SshUtils ssh = sessionVo.getSsh();
+                    SshServerVo serverVo = JSON.parseObject(payload, SshServerVo.class);
+                    ByteArrayOutputStream stream = ssh.view(serverVo.getPath());
+                    if (stream == null) {
+                        r = R.error("文件不存在").put("action", action.getCode());
+                        break;
+                    }
+                    r.put("data", stream.toString());
                 } catch (Exception err) {
                     r = R.error(err.getMessage()).put("action", action.getCode());
                 }
@@ -155,7 +169,11 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
         /**
          * socket 测试
          */
-        SOCKET_TEST(2, "socket 测试");
+        SOCKET_TEST(2, "socket 测试"),
+        /**
+         * 文件预览
+         */
+        FILE_VIEW(3, "文件预览");
 
         final Integer code;
         final String msg;

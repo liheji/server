@@ -13,7 +13,6 @@ import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.service.AccountService;
 
-
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -22,7 +21,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -30,10 +32,10 @@ import java.util.function.Function;
  * @time : 2022/1/30 8:59
  * @create : IdeaJ
  * @project : serverPlus
- * @description : 系统登录后自动设置系统用户到 HttpServletRequest 的 Attribute中
+ * @description : 系统登录后自动设置系统用户到共享数据
  */
 @Component
-public class ParamSetFilter extends OncePerRequestFilter {
+public class SetSharedDataFilter extends OncePerRequestFilter {
     @Autowired
     private AccountService accountService;
 
@@ -47,7 +49,7 @@ public class ParamSetFilter extends OncePerRequestFilter {
 
     public static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
-    public ParamSetFilter() {
+    public SetSharedDataFilter() {
     }
 
     @Override

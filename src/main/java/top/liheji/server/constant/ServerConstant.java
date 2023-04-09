@@ -13,7 +13,12 @@ public class ServerConstant {
     /**
      * web 静态资源路径
      */
-    public static final String RESOURCE_DIR = "/usr/local/tomcat/resources";
+    public static final String STATIC_DIR = "/data/resources";
+
+    /**
+     * resources 资源路径
+     */
+    public static final String RESOURCE_DIR = "/application/BOOT-INF/classes";
 
     /**
      * 线程共享信息（同一个线程）
