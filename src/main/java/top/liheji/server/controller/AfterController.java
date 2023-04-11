@@ -1,5 +1,6 @@
 package top.liheji.server.controller;
 
+import cn.hutool.core.codec.Base64;
 import com.alibaba.fastjson2.JSON;
 import com.aspose.slides.exceptions.NotSupportedException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -50,7 +51,7 @@ public class AfterController {
     public R status() {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         current.setPassword("");
-        return R.ok().put("data", CypherUtils.encodeToBase64(JSON.toJSONBytes(current)));
+        return R.ok().put("data", Base64.encode(JSON.toJSONBytes(current)));
     }
 
     @DeleteMapping("authAccount")

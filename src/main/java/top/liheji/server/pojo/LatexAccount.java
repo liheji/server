@@ -1,13 +1,12 @@
 package top.liheji.server.pojo;
 
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 
 /**
  * Latex用户实体
@@ -30,10 +29,10 @@ public class LatexAccount implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private Boolean isAvailable;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     private Date lastLogin;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 

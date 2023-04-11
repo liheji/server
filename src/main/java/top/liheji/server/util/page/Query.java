@@ -1,11 +1,11 @@
 package top.liheji.server.util.page;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import top.liheji.server.constant.PageConstant;
 import top.liheji.server.util.xss.SQLFilter;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.Map;
 
@@ -45,7 +45,7 @@ public class Query<T> {
 
 
         //前端字段排序
-        if (StringUtils.isNotEmpty(orderField) && StringUtils.isNotEmpty(order)) {
+        if (StrUtil.isNotEmpty(orderField) && StrUtil.isNotEmpty(order)) {
             if (PageConstant.ASC.equalsIgnoreCase(order)) {
                 return page.addOrder(OrderItem.asc(orderField));
             } else {
@@ -54,7 +54,7 @@ public class Query<T> {
         }
 
         //没有排序字段，则不排序
-        if (StringUtils.isBlank(defaultOrderField)) {
+        if (StrUtil.isBlank(defaultOrderField)) {
             return page;
         }
 

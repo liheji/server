@@ -1,8 +1,8 @@
 package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 
 import java.io.Serializable;
 import java.util.*;
@@ -36,18 +36,18 @@ public class Account implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private Boolean isSuperuser;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     private Date lastLogin;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     @Version
     @TableField(fill = FieldFill.INSERT)
     private Integer version;

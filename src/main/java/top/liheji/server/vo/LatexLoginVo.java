@@ -1,9 +1,8 @@
 package top.liheji.server.vo;
 
+import cn.hutool.crypto.digest.DigestUtil;
 import lombok.Data;
-import top.liheji.server.constant.MessageDigestEnum;
 import top.liheji.server.pojo.LatexAccount;
-import top.liheji.server.util.CypherUtils;
 
 /**
  * @author : Galaxy
@@ -23,7 +22,7 @@ public class LatexLoginVo {
     public static LatexLoginVo fromPojo(LatexAccount account) {
         LatexLoginVo latexVo = new LatexLoginVo();
         latexVo.setUsername(account.getUsername());
-        latexVo.setPassword(CypherUtils.encodeToHash(account.getPassword(), MessageDigestEnum.MD5).toLowerCase());
+        latexVo.setPassword(DigestUtil.md5Hex(account.getPassword()));
         return latexVo;
     }
 }

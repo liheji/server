@@ -1,10 +1,9 @@
 package top.liheji.server.vo;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import lombok.Data;
-import top.liheji.server.constant.MessageDigestEnum;
 import top.liheji.server.pojo.LatexAccount;
-import top.liheji.server.util.CypherUtils;
-import top.liheji.server.util.StringUtils;
 
 /**
  * @author : Galaxy
@@ -28,12 +27,12 @@ public class LatexRegisterVo {
 
     public static LatexRegisterVo create(String userAgent) {
         LatexRegisterVo latexVo = new LatexRegisterVo();
-        latexVo.setUsername(StringUtils.getRandString(15).toLowerCase());
-        latexVo.setRowPwd(StringUtils.getRandString(30));
+        latexVo.setUsername(RandomUtil.randomString(15).toLowerCase());
+        latexVo.setRowPwd(RandomUtil.randomString(30));
         latexVo.setEquiptype(userAgent);
         latexVo.setTel("");
         latexVo.setMail("");
-        latexVo.setPassword(CypherUtils.encodeToHash(latexVo.getRowPwd(), MessageDigestEnum.MD5).toLowerCase());
+        latexVo.setPassword(DigestUtil.md5Hex(latexVo.getRowPwd()));
         return latexVo;
     }
 

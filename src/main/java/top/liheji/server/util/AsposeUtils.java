@@ -31,7 +31,7 @@ public class AsposeUtils {
     }
 
     public static boolean transToPdf(String sourcePath, OutputStream pdfStream) {
-        if (SystemUtils.isLinux()) {
+        if (SysUtils.isLinux()) {
             FontSettings.getDefaultInstance().setFontsFolder("/usr/share/fonts/windows", true);
         }
 

@@ -1,5 +1,6 @@
 package top.liheji.server.config;
 
+import cn.hutool.core.codec.Base64;
 import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,6 @@ import top.liheji.server.config.oauth.service.BaiduOAuth2UserServiceImpl;
 import top.liheji.server.config.oauth.service.QQOAuth2UserServiceImpl;
 import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.Account;
-import top.liheji.server.util.CypherUtils;
 import top.liheji.server.util.R;
 import top.liheji.server.util.WebUtils;
 
@@ -235,7 +235,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         return (req, resp, authentication) -> {
             Account current = ServerConstant.LOCAL_ACCOUNT.get();
             current.setPassword("");
-            R r = R.ok().put("data", CypherUtils.encodeToBase64(JSON.toJSONBytes(current)));
+            R r = R.ok().put("data", Base64.encode(JSON.toJSONBytes(current)));
             WebUtils.response(resp, r);
         };
     }

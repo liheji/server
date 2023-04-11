@@ -1,9 +1,9 @@
 package top.liheji.server.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.liheji.server.config.swagger.annotation.ApiIgnoreProperty;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -30,7 +30,7 @@ public class FileInfo implements Serializable {
 
     private String fileHash;
 
-    @ApiIgnoreProperty
+    @ApiModelProperty(hidden = true)
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 

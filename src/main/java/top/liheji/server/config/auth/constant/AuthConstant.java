@@ -1,6 +1,6 @@
 package top.liheji.server.config.auth.constant;
 
-import top.liheji.server.util.StringUtils;
+import cn.hutool.core.util.IdUtil;
 
 /**
  * @author : Galaxy
@@ -22,5 +22,5 @@ public class AuthConstant {
     /**
      * 记住密码 KEY
      */
-    public static final String REMEMBER_ME_KEY = StringUtils.getUuid();
+    public static final String REMEMBER_ME_KEY = IdUtil.randomUUID();
 }

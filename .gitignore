@@ -34,4 +34,6 @@ build/
 .vscode/
 
 ### 隐私保护 ###
-src/main/resources/application.yml
+application.yml
+application-dev.yml
+application-prod.yml

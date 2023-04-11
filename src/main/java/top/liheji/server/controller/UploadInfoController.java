@@ -6,10 +6,8 @@ import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.spring.web.json.Json;
 import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.util.page.PageUtils;
 import top.liheji.server.constant.CaptchaTypeEnum;
@@ -111,7 +109,7 @@ public class UploadInfoController {
         }
 
         long fileSize = file.length();
-        long[] pos = StringUtils.parseRange(range, fileSize);
+        long[] pos = StrUtils.parseRange(range, fileSize);
         long contentLength = pos[1] - pos[0] + 1;
 
         //通知客户端以下载的方式打开

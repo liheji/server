@@ -1,5 +1,6 @@
 package top.liheji.server.service.impl;
 
+import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -10,12 +11,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.RestTemplate;
-import top.liheji.server.constant.MessageDigestEnum;
 import top.liheji.server.pojo.LatexAccount;
 import top.liheji.server.service.LatexAccountService;
 import top.liheji.server.mapper.LatexAccountMapper;
 import org.springframework.stereotype.Service;
-import top.liheji.server.util.CypherUtils;
 import top.liheji.server.vo.LatexRegisterVo;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
 @Service("latexAccountService")
 public class LatexAccountServiceImpl extends ServiceImpl<LatexAccountMapper, LatexAccount>
         implements LatexAccountService {
-    private static final String REG_BY_ACCOUNT_ACTION = "https://www.latexlive.cn:5002/api/Client/RegByAccount";
+    private static final String REG_BY_ACCOUNT_ACTION = "https://reverse.latexlive.com:5002/api/Client/RegByAccount";
 
     @Autowired
     RestTemplate restTemplate;
@@ -72,7 +71,7 @@ public class LatexAccountServiceImpl extends ServiceImpl<LatexAccountMapper, Lat
         }
 
         // 加密密码并返回
-        result.setPassword(CypherUtils.encodeToHash(result.getPassword(), MessageDigestEnum.MD5).toLowerCase());
+        result.setPassword(DigestUtil.md5Hex(result.getPassword()));
 
         return result;
     }

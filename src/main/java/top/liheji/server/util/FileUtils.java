@@ -1,10 +1,13 @@
 package top.liheji.server.util;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileNameUtil;
+import cn.hutool.core.util.HexUtil;
+import cn.hutool.core.util.IdUtil;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
-import top.liheji.server.constant.MessageDigestEnum;
 import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.FileInfo;
 
@@ -33,9 +36,7 @@ public class FileUtils {
         File dirFile = staticFile("uploads");
 
         //不存在则创建files文件夹
-        if (!dirFile.exists()) {
-            dirFile.mkdirs();
-        }
+        FileUtil.mkdir(dirFile);
 
         // 文件存放服务端的位置
         String fileName = file.getOriginalFilename();
@@ -43,13 +44,14 @@ public class FileUtils {
             fileName = "";
         }
 
-        File f = getUniqueFile(splitText(fileName)[1], "uploads");
+        File f = getUniqueFile("." + FileNameUtil.extName(fileName), "uploads");
 
         //为读取文件提供流通道
         @Cleanup InputStream in = file.getInputStream();
         @Cleanup OutputStream out = new FileOutputStream(f);
-        MessageDigest digestMd5 = MessageDigestEnum.MD5.messageDigest();
-        MessageDigest digestSha256 = MessageDigestEnum.SHA_256.messageDigest();
+
+        MessageDigest digestMd5 = MessageDigest.getInstance("MD5");
+        MessageDigest digestSha256 = MessageDigest.getInstance("SHA-256");
 
         int num;
         byte[] bytes = new byte[1024];
@@ -62,7 +64,7 @@ public class FileUtils {
         return new FileInfo(
                 f.getName(),
                 file.getSize(),
-                CypherUtils.bytesToString(digestMd5.digest()) + CypherUtils.bytesToString(digestSha256.digest())
+                HexUtil.encodeHexStr(digestMd5.digest()) + HexUtil.encodeHexStr(digestSha256.digest())
         );
     }
 
@@ -101,31 +103,6 @@ public class FileUtils {
     }
 
     /**
-     * 文件写入
-     *
-     * @param bs64 base64编码文件
-     * @throws IOException IOException
-     */
-    public static File base64SaveToFile(String bs64) throws IOException {
-        if (bs64.startsWith("data:")) {
-            bs64 = bs64.replaceFirst("^data:.+?;base64,", "");
-        }
-
-        File writeFile = getUniqueFile(".png", "uploads");
-
-        @Cleanup InputStream in = new ByteArrayInputStream(CypherUtils.decodeToBytes(bs64));
-        @Cleanup OutputStream out = new FileOutputStream(writeFile);
-
-        int len = 0;
-        byte[] buffer = new byte[1024];
-        while ((len = in.read(buffer)) != -1) {
-            out.write(buffer, 0, len);
-        }
-
-        return writeFile;
-    }
-
-    /**
      * 生成一个在文件夹中不存在的文件名并返回文件类
      *
      * @param suffix 文件后缀名
@@ -134,13 +111,11 @@ public class FileUtils {
      */
     public static File getUniqueFile(String suffix, String... args) {
         File baseDir = staticFile(args);
-        if (!baseDir.exists()) {
-            baseDir.mkdirs();
-        }
+        FileUtil.mkdir(baseDir);
 
-        File file = new File(baseDir, StringUtils.getUuidNoLine() + suffix);
+        File file = new File(baseDir, IdUtil.simpleUUID() + suffix);
         while (file.exists()) {
-            file = new File(baseDir, StringUtils.getUuidNoLine() + suffix);
+            file = new File(baseDir, IdUtil.simpleUUID() + suffix);
         }
 
         return file;
@@ -184,36 +159,5 @@ public class FileUtils {
         }
 
         return resFile;
-    }
-
-    /**
-     * 将字符串切割为文件名和后缀
-     *
-     * @param filePath 文件路径
-     * @return 文件文件名和后缀
-     */
-    public static String[] splitText(String filePath) {
-        File file = new File(filePath);
-        String fileName = file.getName();
-        int index = fileName.lastIndexOf(".");
-        if (index < 0) {
-            index = fileName.length();
-        }
-
-        return new String[]{
-                new File(file.getParentFile(), fileName.substring(0, index)).getAbsolutePath(),
-                fileName.substring(index)
-        };
-    }
-
-    /**
-     * 路径格式化
-     *
-     * @param first 父路径
-     * @param more  子路径
-     * @return 格式化后的路径
-     */
-    public static String join(String first, String... more) {
-        return Paths.get(first, more).toFile().getAbsolutePath();
     }
 }

@@ -1,5 +1,6 @@
 package top.liheji.server.util;
 
+import cn.hutool.core.io.FileUtil;
 import com.jcraft.jsch.*;
 import lombok.Cleanup;
 import top.liheji.server.constant.MediaType;
@@ -135,7 +136,7 @@ public class SshUtils {
             );
 
             if (files[0].startsWith("l")) {
-                item.setLink(FileUtils.join(path, files[10]));
+                item.setLink(FileUtil.file(path, files[10]).getAbsolutePath());
             }
 
             if (files[0].startsWith("-")) {
