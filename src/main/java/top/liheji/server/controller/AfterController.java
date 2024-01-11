@@ -3,7 +3,6 @@ package top.liheji.server.controller;
 import cn.hutool.core.codec.Base64;
 import com.alibaba.fastjson2.JSON;
 import com.aspose.slides.exceptions.NotSupportedException;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.Cleanup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.scheduled.DeleteWakeUpFileTask;
-import top.liheji.server.service.AuthAccountService;
 import top.liheji.server.service.CaptchaService;
 import top.liheji.server.constant.CaptchaTypeEnum;
 import top.liheji.server.pojo.*;
@@ -20,7 +18,6 @@ import top.liheji.server.util.*;
 import top.liheji.server.vo.SendCaptchaVo;
 
 import java.io.*;
-import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -37,9 +34,6 @@ public class AfterController {
     private CaptchaService captchaService;
 
     @Autowired
-    private AuthAccountService authAccountService;
-
-    @Autowired
     private ScheduledThreadPoolExecutor threadPoolExecutor;
 
     /**
@@ -51,19 +45,8 @@ public class AfterController {
     public R status() {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         current.setPassword("");
-        return R.ok().put("data", Base64.encode(JSON.toJSONBytes(current)));
-    }
 
-    @DeleteMapping("authAccount")
-    public R deleteAuthAccount(@RequestBody Map<String, Object> param) {
-        String sId = param.get("id").toString();
-        Account current = ServerConstant.LOCAL_ACCOUNT.get();
-        authAccountService.remove(
-                new LambdaQueryWrapper<AuthAccount>()
-                        .eq(AuthAccount::getAccountId, current.getId())
-                        .eq(AuthAccount::getId, Long.parseLong(sId))
-        );
-        return R.ok();
+        return R.ok().put("data", Base64.encode(JSON.toJSONBytes(current)));
     }
 
     @GetMapping("sendCaptcha")

@@ -62,16 +62,4 @@ public class AccountVo implements Serializable {
             return accountGroups;
         }).collect(Collectors.toList());
     }
-
-    public List<AuthAccountPermissions> getAccountPermissionList() {
-        if (ObjectUtils.isEmpty(permissionIds)) {
-            return null;
-        }
-        return permissionIds.stream().map(it -> {
-            AuthAccountPermissions accountPermissions = new AuthAccountPermissions();
-            accountPermissions.setAccountId(this.id);
-            accountPermissions.setPermissionId(it);
-            return accountPermissions;
-        }).collect(Collectors.toList());
-    }
 }

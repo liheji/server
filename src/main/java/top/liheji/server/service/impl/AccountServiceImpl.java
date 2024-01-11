@@ -38,9 +38,6 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account>
     AuthAccountGroupsService authAccountGroupsService;
 
     @Autowired
-    AuthAccountPermissionsService authAccountPermissionsService;
-
-    @Autowired
     AuthGroupPermissionsService authGroupPermissionsService;
 
     @Override
@@ -83,28 +80,6 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account>
             // 保存新数据
             authAccountGroupsService.saveBatch(groupList);
         }
-
-        List<AuthAccountPermissions> permissionList = accountVo.getAccountPermissionList();
-        // 删除源数据
-        authAccountPermissionsService.remove(
-                new LambdaQueryWrapper<AuthAccountPermissions>()
-                        .eq(AuthAccountPermissions::getAccountId, accountVo.getId())
-        );
-        if (!ObjectUtils.isEmpty(permissionList)) {
-
-            if (!ObjectUtils.isEmpty(accountVo.getGroupIds())) {
-                // 排除GROUP拥有的权限
-                Set<Long> longSet = authGroupPermissionsService.list(
-                        new LambdaQueryWrapper<AuthGroupPermissions>()
-                                .in(AuthGroupPermissions::getGroupId, accountVo.getGroupIds())
-                ).stream().map(AuthGroupPermissions::getPermissionId).collect(Collectors.toSet());
-                permissionList = permissionList.stream().filter(
-                        authAccountPermissions -> !longSet.contains(authAccountPermissions.getPermissionId())
-                ).collect(Collectors.toList());
-            }
-            // 保存新数据
-            authAccountPermissionsService.saveBatch(permissionList);
-        }
     }
 
     @Override
@@ -124,17 +99,14 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account>
         if (account.getIsSuperuser()) {
             return new ArrayList<>(0);
         }
-        List<AuthPermission> accountPermissions = authAccountPermissionsService.getPermissionByAccountId(accountId);
         // 合并并通过Map(ID属性作为key)去重
-        Map<Long, AuthPermission> permissionMap = accountPermissions.stream().collect(Collectors.toMap(AuthPermission::getId, it -> it));
+        Map<Long, AuthPermission> permissionMap = new HashMap<>(64);
         authAccountGroupsService
                 .getGroupByAccountId(accountId)
                 .forEach(it -> {
                     authGroupPermissionsService
                             .getPermissionByGroupId(it.getId())
-                            .forEach(permission -> {
-                                permissionMap.putIfAbsent(permission.getId(), permission);
-                            });
+                            .forEach(permission -> permissionMap.putIfAbsent(permission.getId(), permission));
                 });
 
         return new ArrayList<>(permissionMap.values());

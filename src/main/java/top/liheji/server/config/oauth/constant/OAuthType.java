@@ -2,6 +2,9 @@ package top.liheji.server.config.oauth.constant;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author : Galaxy
  * @time : 2022/8/26 8:44
@@ -11,7 +14,6 @@ import lombok.Getter;
  */
 @Getter
 public enum OAuthType {
-
     /**
      * 默认方式，即 oauth 的标准登录方式，
      */
@@ -50,5 +52,9 @@ public enum OAuthType {
             }
         }
         return null;
+    }
+
+    public static List<OAuthType> available() {
+        return Arrays.asList(QQ, Baidu, GitHub);
     }
 }

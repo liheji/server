@@ -30,9 +30,6 @@ public class RedisUserDetailsServiceImpl implements UserDetailsService {
     private AccountService accountService;
 
     @Autowired
-    private AuthGroupService authGroupService;
-
-    @Autowired
     private AuthPermissionService authPermissionService;
 
     @Override
@@ -54,27 +51,18 @@ public class RedisUserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("用户不存在");
         }
 
-        List<AuthGroup> groups;
         List<AuthPermission> permissions;
 
         // 是否管理员
         if (account.getIsSuperuser()) {
-            groups = authGroupService.list();
             permissions = authPermissionService.list();
         } else {
-            groups = accountService.getGroupsByAccountId(account.getId());
             permissions = accountService.getPermissionsByAccountId(account.getId());
         }
 
         Set<GrantedAuthority> auths = new HashSet<>();
-        // 用户分组
-        groups.forEach(group -> {
-            auths.add(new SimpleGrantedAuthority("ROLE_" + group.getCodename()));
-        });
         // 用户权限
-        permissions.forEach(permission -> {
-            auths.add(new SimpleGrantedAuthority(permission.getCodename()));
-        });
+        permissions.forEach(permission -> auths.add(new SimpleGrantedAuthority(permission.getCodename())));
 
         return new User(account.getUsername(), account.getPassword(), account.getIsEnabled(),
                 true, true, true, auths);

@@ -35,7 +35,6 @@ public class AuthPermissionServiceImpl extends ServiceImpl<AuthPermissionMapper,
                     .or()
                     .like(AuthPermission::getCodename, param);
         }
-        System.out.println(params.toString());
         IPage<AuthPermission> page = this.page(
                 new Query<AuthPermission>().getPage(params),
                 queryWrapper
