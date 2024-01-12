@@ -29,7 +29,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import top.liheji.server.config.auth.constant.AuthConstant;
 import top.liheji.server.config.auth.remember.RedisTokenBasedRememberMeServices;
 import top.liheji.server.config.filter.SetComDataFilter;
-import top.liheji.server.config.filter.SetSharedDataFilter;
+import top.liheji.server.config.filter.AuthFilter;
 import top.liheji.server.config.oauth.constant.OAuthType;
 import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
@@ -72,7 +72,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private SetComDataFilter setComDataFilter;
 
     @Autowired
-    private SetSharedDataFilter setSharedDataFilter;
+    private AuthFilter authFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -98,17 +98,17 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // 这些 URL需要拦截并识别验证码
         captchaFilter.setMatchers("/login", "/before/forget", "/before/register");
         // 设置拦截URL中需要排除验证的特殊项
-        setSharedDataFilter.setExcludeMatchers("/login*", "/before/**");
+        authFilter.setExcludeMatchers("/login*", "/before/**");
         // 设置用户参数过滤器
         if (debug) {
             String[] debugArray = new String[]{"/doc.html*", "/webjars/**", "/swagger*/**", "/v2/**"};
-            setSharedDataFilter.addExcludeMatchers(debugArray);
+            authFilter.addExcludeMatchers(debugArray);
             http.authorizeRequests().antMatchers(debugArray).permitAll();
         }
 
         http.addFilterBefore(setComDataFilter, LogoutFilter.class)
                 .addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(setSharedDataFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(authFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         // 路径拦截设置

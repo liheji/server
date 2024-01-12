@@ -1,9 +1,9 @@
 package top.liheji.server.config.auth.remember;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +21,6 @@ import top.liheji.server.pojo.AuthDevices;
 import top.liheji.server.service.AccountService;
 import top.liheji.server.service.AuthAccountService;
 import top.liheji.server.service.AuthDevicesService;
-import top.liheji.server.util.WebUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -121,8 +120,8 @@ public class RedisTokenBasedRememberMeServices extends PersistentTokenBasedRemem
             if (account != null) {
                 if (obj == null) {
                     // 绑定用户
-                    obj = new AuthAccount();
-                    BeanUtils.copyProperties(user, obj);
+                    String jsonString = JSONObject.toJSONString(user);
+                    obj = JSONObject.parseObject(jsonString, AuthAccount.class);
                     obj.setAccountId(account.getId());
                     // 保存认证
                     authAccountService.save(obj);

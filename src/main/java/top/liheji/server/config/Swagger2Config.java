@@ -48,7 +48,7 @@ public class Swagger2Config {
                         "本项目项目使用springboot + MyBatis-Plus实现，项目目的主要作为练手<br>" +
                                 "前端使用vue2 + element-ui实现（前后端完全分离）在另一个项目"
                 )
-                .contact(new Contact("憶夣", "https://blog.liheji.top", "930617673@qq.com"))
+                .contact(new Contact("憶夣", "https://blog.yilee.top", "930617673@qq.com"))
                 .build();
     }
 }
