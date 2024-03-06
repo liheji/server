@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author : Galaxy
@@ -17,25 +18,23 @@ public enum OAuthType {
     /**
      * 默认方式，即 oauth 的标准登录方式，
      */
-    DEFAULT("default", "Default"),
     QQ("qq", "QQ"),
-    Baidu("baidu", "百度"),
+    Gitee("gitee", "Gitee"),
     GitHub("github", "GitHub"),
+    Baidu("baidu", "百度", false),
     Weibo("weibo", "微博", false),
-    Gitee("gitee", "Gitee", false),
     Google("google", "谷歌", false),
     Huawei("huawei", "华为", false),
     Xiaomi("xiaomi", "小米", false),
-    WeChat("wechat", "微信", false);
+    WeChat("wechat", "微信", false),
+    MICROSOFT("microsoft", "微软", false);
 
     private final String code;
     private final String name;
     private final Boolean enabled;
 
     OAuthType(String code, String name) {
-        this.code = code;
-        this.name = name;
-        this.enabled = true;
+        this(code, name, true);
     }
 
     OAuthType(String code, String name, Boolean enabled) {
@@ -55,6 +54,9 @@ public enum OAuthType {
     }
 
     public static List<OAuthType> available() {
-        return Arrays.asList(QQ, Baidu, GitHub);
+        List<OAuthType> oAuthTypeList = Arrays.stream(OAuthType.values())
+                .filter(OAuthType::getEnabled)
+                .collect(Collectors.toList());
+        return oAuthTypeList;
     }
 }

@@ -28,11 +28,15 @@ public class AuthAccount implements Serializable {
 
     private String openId;
 
+    private String username;
+
     private String name;
 
     private String avatarUrl;
 
     private String authCode;
+
+    private String authToken;
 
     /**
      * 外键

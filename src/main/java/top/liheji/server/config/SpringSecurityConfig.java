@@ -7,17 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -26,20 +22,15 @@ import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import top.dcenter.ums.security.core.oauth.config.Auth2AutoConfigurer;
+import top.dcenter.ums.security.core.oauth.properties.Auth2Properties;
 import top.liheji.server.config.auth.constant.AuthConstant;
 import top.liheji.server.config.auth.remember.RedisTokenBasedRememberMeServices;
 import top.liheji.server.config.filter.SetComDataFilter;
 import top.liheji.server.config.filter.AuthFilter;
-import top.liheji.server.config.oauth.constant.OAuthType;
 import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
 import top.liheji.server.config.filter.CaptchaFilter;
-import top.liheji.server.config.oauth.client.MultipleAuthorizationCodeTokenResponseClient;
-import top.liheji.server.config.oauth.client.BaiduAuthorizationCodeTokenResponseClient;
-import top.liheji.server.config.oauth.client.QQAuthorizationCodeTokenResponseClient;
-import top.liheji.server.config.oauth.service.MultipleOAuth2UserServiceImpl;
-import top.liheji.server.config.oauth.service.BaiduOAuth2UserServiceImpl;
-import top.liheji.server.config.oauth.service.QQOAuth2UserServiceImpl;
 import top.liheji.server.constant.ServerConstant;
 import top.liheji.server.pojo.Account;
 import top.liheji.server.util.R;
@@ -83,6 +74,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private PersistentTokenRepository redisTokenRepository;
 
+    @Autowired
+    private Auth2AutoConfigurer auth2AutoConfigurer;
+
+    @Autowired
+    private Auth2Properties auth2Properties;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.authenticationProvider(captchaAuthenticationProvider);
@@ -109,30 +106,28 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         http.addFilterBefore(setComDataFilter, LogoutFilter.class)
                 .addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(authFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(authenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         // 路径拦截设置
         http.authorizeRequests()
                 // 允许直接访问路径
-                .antMatchers("/before/**").permitAll()
-                // 其他路径需要认证（登录）
-                .anyRequest().authenticated();
+                .antMatchers("/before/**")
+                .permitAll();
 
         //登录设置
         http.formLogin()
                 .loginPage("/login");
 
         // 第三方登录
-        http.oauth2Login()
-                .tokenEndpoint()
-                .accessTokenResponseClient(accessTokenResponseClient())
-                .and()
-                .userInfoEndpoint()
-                .userService(oauth2UserService())
-                .and()
-                .successHandler(oauth2LoginSuccessHandler())
-                .failureHandler(oauth2LoginFailureHandler());
+        http.apply(this.auth2AutoConfigurer);
+        http.authorizeRequests()
+                .antMatchers(HttpMethod.GET,
+                        auth2Properties.getRedirectUrlPrefix() + "/*",
+                        auth2Properties.getAuthLoginUrlPrefix() + "/*")
+                .permitAll();
 
+        http.authorizeRequests()
+                .anyRequest().authenticated();
 
         // 登出设置
         http.logout()
@@ -149,8 +144,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringAntMatchers("/before/cdn");
 
-        // formLogin：不管用，需要到下方的 authenticationFilter 函数中设置
-        // oauth2Login： 需要用到记住密码的服务
         http.rememberMe()
                 .key(AuthConstant.REMEMBER_ME_KEY)
                 .rememberMeServices(rememberMeServices());
@@ -200,33 +193,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /**
-     * Oauth 认证服务 使用code交换 access_token的具体逻辑
-     *
-     * @return {@link OAuth2AccessTokenResponseClient}
-     */
-    @Bean
-    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-        MultipleAuthorizationCodeTokenResponseClient multipleClient = new MultipleAuthorizationCodeTokenResponseClient();
-        // 加入QQ自定义 QQAuthorizationCodeTokenResponseClient
-        multipleClient.put(OAuthType.QQ, new QQAuthorizationCodeTokenResponseClient());
-        multipleClient.put(OAuthType.Baidu, new BaiduAuthorizationCodeTokenResponseClient());
-        return multipleClient;
-    }
-
-    /**
-     * 请求用户信息 OAuth2User
-     *
-     * @return {@link OAuth2UserService}
-     */
-    @Bean
-    public OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
-        MultipleOAuth2UserServiceImpl multipleService = new MultipleOAuth2UserServiceImpl();
-        multipleService.put(OAuthType.QQ, new QQOAuth2UserServiceImpl());
-        multipleService.put(OAuthType.Baidu, new BaiduOAuth2UserServiceImpl());
-        return multipleService;
-    }
-
-    /**
      * 登录成功的回调
      *
      * @return 回调函数接口
@@ -249,29 +215,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         return (req, resp, e) -> {
             e.printStackTrace();
             WebUtils.response(resp, R.error(e.getMessage()));
-        };
-    }
-
-    /**
-     * 登录成功的回调
-     *
-     * @return 回调函数接口
-     */
-    private AuthenticationSuccessHandler oauth2LoginSuccessHandler() {
-        return (req, resp, authentication) -> {
-            WebUtils.response(resp, "", true);
-        };
-    }
-
-    /**
-     * 登录失败的回调
-     *
-     * @return 回调函数接口
-     */
-    private AuthenticationFailureHandler oauth2LoginFailureHandler() {
-        return (req, resp, e) -> {
-            e.printStackTrace();
-            WebUtils.response(resp, "登录失败", false);
         };
     }
 
