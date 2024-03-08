@@ -53,11 +53,11 @@ public class MultipleLoginAuthenticationFilter extends UsernamePasswordAuthentic
             authRequest = new CaptchaAuthenticationToken(username, password);
         }
         // Allow subclasses to set the "details" property
-        setDetails(request, authRequest);
+        setCurDetails(request, authRequest);
         return this.getAuthenticationManager().authenticate(authRequest);
     }
 
-    protected void setDetails(HttpServletRequest request, AbstractAuthenticationToken authRequest) {
+    protected void setCurDetails(HttpServletRequest request, AbstractAuthenticationToken authRequest) {
         authRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
     }
 

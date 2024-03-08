@@ -45,9 +45,10 @@ public class AuthAccountController {
             if (!authAccountMap.containsKey(code)) {
                 AuthAccount obj = new AuthAccount();
                 obj.setAuthCode(code);
-                obj.setAuthToken(null);
                 authAccountMap.put(code, obj);
             }
+            authAccountMap.get(code).setAuthName(it.getName());
+            authAccountMap.get(code).setAuthToken(null);
         });
 
         return R.ok().put("data", authAccountMap.values());

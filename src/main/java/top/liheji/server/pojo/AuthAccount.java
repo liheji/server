@@ -47,5 +47,8 @@ public class AuthAccount implements Serializable {
      * 自定义方法
      */
     @TableField(exist = false)
+    private String authName;
+
+    @TableField(exist = false)
     private static final long serialVersionUID = -6471191841884811150L;
 }

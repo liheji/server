@@ -71,7 +71,6 @@ public class RedisTokenBasedRememberMeServices extends PersistentTokenBasedRemem
         Date curDate = new Date();
         PersistentRememberMeToken persistentToken = new PersistentRememberMeToken(username, generateSeriesData(), generateTokenData(), curDate);
         try {
-
             String paramValue = request.getParameter(getParameter());
             if (ObjectUtils.isEmpty(paramValue) || "false".equalsIgnoreCase(paramValue) || "0".equals(paramValue)) {
                 // 不记住密码

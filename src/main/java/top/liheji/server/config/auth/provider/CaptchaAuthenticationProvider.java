@@ -1,5 +1,7 @@
 package top.liheji.server.config.auth.provider;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -31,6 +33,8 @@ public class CaptchaAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Getter
+    @Setter
     private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
     @Override
@@ -54,13 +58,5 @@ public class CaptchaAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> aClass) {
         return CaptchaAuthenticationToken.class.isAssignableFrom(aClass);
-    }
-
-    public GrantedAuthoritiesMapper getAuthoritiesMapper() {
-        return authoritiesMapper;
-    }
-
-    public void setAuthoritiesMapper(GrantedAuthoritiesMapper authoritiesMapper) {
-        this.authoritiesMapper = authoritiesMapper;
     }
 }
