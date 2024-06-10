@@ -8,6 +8,8 @@ server:
   forward-headers-strategy: framework
 
 spring:
+  profiles:
+    active: prod
   jmx:
     enabled: false
   jackson:
@@ -18,25 +20,15 @@ spring:
       enabled: true
       max-file-size: 16384MB
       max-request-size: 16384MB
-  datasource: # 配置数据库连接
+  datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/数据库名称?characterEncoding=utf-8&useSSL=false&allowMultiQueries=true
-    username: 用户名
-    password: 密码
   mail:
-    host: smtp.qq.com
-    username: 邮箱账号
-    password: 邮箱认证密码
-    port: 587
     default-encoding: UTF-8
     properties:
       mail:
         smtp:
           socketFactoryClass: javax.net.ssl.SSLSocketFactory
   redis:
-    database: 0
-    host: localhost
-    port: 6379
     timeout: 30000
     connectTimeout: 60000
     jedis:
@@ -45,6 +37,7 @@ spring:
         max-wait: -1
         max-idle: 10
         min-idle: 5
+    client-type: jedis
   cache:
     type: redis
     redis:
@@ -54,28 +47,12 @@ spring:
       cache-null-values: true
       # 缓存的过期时间，单位是毫秒
       time-to-live: 86400000
-
-ums:
-  oauth:
-    qq:
-      client-id: KEY
-      client-secret: SECRET
-    github:
-      client-id: KEY
-      client-secret: SECRET
-    gitee:
-      client-id: KEY
-      client-secret: SECRET
-    # 登录信息
-    domain: http://localhost:8000
-    auth-login-url-prefix: /oauth2/authorization
-    redirect-url-prefix: /oauth2/login
-    # 自动注册
-    auto-sign-up: false
-    sign-up-url: /
-    enable-user-connection-and-auth-token-table: false
-    enable-auth-token-table: false
-
+  mvc:
+    log-resolved-exception: true
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
 
 mybatis-plus:
   type-aliases-package: top.liheji.pojo
@@ -95,6 +72,7 @@ logging:
   config: classpath:log4j2.xml
 
 permission:
+  create: false
   list:
     - table: auth_group
       all: 权限分组(角色)
@@ -107,7 +85,7 @@ permission:
       change: 修改所有用户信息
       delete: 逻辑删除用户
       view: 查看所有用户信息
-    - table: server_uploadinfo
+    - table: server_upload_info
       add: 上传文件
       delete: 删除上传的文件
       view: 查看上传的文件
@@ -118,4 +96,3 @@ permission:
       use: 使用WebSocket(不存在的表)
     - table: server_wakeup
       use: 使用WakeUp格式化(不存在的表)
-  create: false

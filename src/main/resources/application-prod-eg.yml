@@ -1,0 +1,37 @@
+spring:
+  datasource: # 配置数据库连接
+    url: jdbc:mysql://localhost:3306/数据库名称?characterEncoding=utf-8&useSSL=false&allowMultiQueries=true
+    username: 用户名
+    password: 密码
+  mail:
+    host: smtp.qq.com
+    username: 邮箱账号
+    password: 邮箱认证密码
+    port: 587
+  redis:
+    database: 0
+    host: redis地址
+    port: 6379
+
+ums:
+  oauth:
+    qq:
+      client-id: KEY
+      client-secret: SECRET
+    github:
+      client-id: KEY
+      client-secret: SECRET
+    gitee:
+      client-id: KEY
+      client-secret: SECRET
+    # 登录信息
+    domain: http://localhost:8000
+    auth-login-url-prefix: /oauth2/authorization
+    redirect-url-prefix: /oauth2/login
+    # 自动注册
+    auto-sign-up: false
+    sign-up-url: /
+    enable-user-connection-and-auth-token-table: false
+    enable-auth-token-table: false
+
+debug: false
