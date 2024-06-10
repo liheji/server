@@ -139,33 +139,15 @@ public class WebUtils {
     }
 
     /**
-     * 返回text/html数据
-     *
-     * @param resp   响应
-     * @param msg    信息
-     * @param toMain 是否去主页
-     * @throws IOException IO异常
-     */
-    public static void response(HttpServletResponse resp, String msg, boolean toMain) throws IOException {
-        resp.setContentType("text/html;charset=utf-8");
-        PrintWriter out = resp.getWriter();
-        out.write(oauth2Html(msg, toMain));
-        out.flush();
-        out.close();
-    }
-
-    /**
      * 拼接返回的HTML
      *
      * @param msg    信息
-     * @param toMain 是否去主页
      * @return HTML文本
      */
-    private static String oauth2Html(String msg, boolean toMain) {
-        final String path = toMain ? "/#/main/personal" : "/#/login?msg=" + msg;
+    public static String redirectHtml(String msg) {
         StringBuilder builder = new StringBuilder();
         try {
-            File oauth2 = FileUtils.resourceFile("templates", "oauth2.html");
+            File oauth2 = FileUtils.resourceFile("templates", "redirect.html");
             @Cleanup FileInputStream fis = new FileInputStream(oauth2);
             @Cleanup InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
             @Cleanup BufferedReader reader = new BufferedReader(isr);
@@ -175,6 +157,6 @@ public class WebUtils {
             }
         } catch (Exception ignored) {
         }
-        return String.format(builder.toString(), path);
+        return String.format(builder.toString(), msg, "/#/main/personal");
     }
 }

@@ -14,8 +14,8 @@ import top.liheji.server.util.WebUtils;
  * @project : server
  * @description :
  */
-@ControllerAdvice(basePackages = "top.liheji.server.controller")
-public class ServerControllerAdvice {
+@ControllerAdvice
+public class SpringControllerAdvice {
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<String> handleThrowable(Throwable e) {
         e.printStackTrace();
