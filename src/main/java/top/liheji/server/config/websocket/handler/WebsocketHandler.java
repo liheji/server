@@ -17,7 +17,6 @@ import top.liheji.server.util.FileUtils;
 import top.liheji.server.util.R;
 import top.liheji.server.util.SshUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,6 +107,7 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
                     ssh.connect();
                     sessionVo.setSsh(ssh);
                 } catch (Exception err) {
+                    err.printStackTrace();
                     r = R.error(err.getMessage()).put("action", action.getCode());
                 }
                 break;
@@ -117,6 +117,7 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
                     SshServerVo serverVo = JSON.parseObject(payload, SshServerVo.class);
                     r.put("data", ssh.genInfoList(serverVo.getPath()));
                 } catch (Exception err) {
+                    err.printStackTrace();
                     r = R.error(err.getMessage()).put("action", action.getCode());
                 }
                 break;
@@ -124,13 +125,14 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
                 try {
                     SshUtils ssh = sessionVo.getSsh();
                     SshServerVo serverVo = JSON.parseObject(payload, SshServerVo.class);
-                    ByteArrayOutputStream stream = ssh.view(serverVo.getPath());
-                    if (stream == null) {
-                        r = R.error("文件不存在").put("action", action.getCode());
+                    String str = ssh.view(serverVo.getPath());
+                    if (str == null) {
+                        r = R.error("文件不支持预览").put("action", action.getCode());
                         break;
                     }
-                    r.put("data", stream.toString());
+                    r.put("data", str);
                 } catch (Exception err) {
+                    err.printStackTrace();
                     r = R.error(err.getMessage()).put("action", action.getCode());
                 }
                 break;

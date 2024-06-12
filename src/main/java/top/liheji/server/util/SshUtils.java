@@ -1,6 +1,5 @@
 package top.liheji.server.util;
 
-import cn.hutool.core.io.FileUtil;
 import com.jcraft.jsch.*;
 import lombok.Cleanup;
 import top.liheji.server.constant.MediaType;
@@ -8,6 +7,7 @@ import top.liheji.server.vo.FileItemVo;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -112,7 +112,7 @@ public class SshUtils {
         List<FileItemVo> fileList = new ArrayList<>();
         List<FileItemVo> dirList = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S Z");
-        String[] strs = execute(String.format("cd %s;ls -lA --time-style=full-iso", path)).split("\\s*\\n\\s*");
+        String[] strs = execute(String.format("ls -lA --time-style=full-iso %s/", path)).split("\\s*\\n\\s*");
         for (String str : strs) {
             String[] files = str.split("\\s+");
             if (files.length < 9) {
@@ -136,10 +136,15 @@ public class SshUtils {
             );
 
             if (files[0].startsWith("l")) {
-                item.setLink(FileUtil.file(path, files[10]).getAbsolutePath());
+                String filePath = Paths.get(path, files[10]).toAbsolutePath().toString();
+                String st = execute(String.format("file %s", filePath));
+                item.setLink(filePath);
+                if (!st.contains("No such")) {
+                    item.setIsFile(!st.contains("directory"));
+                }
             }
 
-            if (files[0].startsWith("-")) {
+            if (item.getIsFile()) {
                 item.setSize(Long.parseLong(files[4]));
                 fileList.add(item);
             } else {
@@ -163,29 +168,16 @@ public class SshUtils {
      * @return 文件内容
      * @throws Exception
      */
-    public ByteArrayOutputStream view(String path) throws Exception {
+    public String view(String path) throws Exception {
         MediaType mediaType = MediaType.guessMediaTypeClass(path);
         if (!mediaType.isText()) {
             return null;
         }
-        try {
-            ChannelSftp sftp = (ChannelSftp) this.session.openChannel("sftp");
-            SftpATTRS lstat = sftp.lstat(path);
-            // 文件大小限制
-            if (lstat.getSize() > 1024 * 1024 * 10) {
-                return null;
-            }
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            // 进入目录
-            sftp.get(path, os);
-            return os;
-        } catch (SftpException sException) {
-            if (sException.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) {
-                return null;
-            } else {
-                throw sException;
-            }
+        String res = execute(String.format("cat %s", path));
+        if (res == null || res.trim().isEmpty()) {
+            return null;
         }
+        return res.trim();
     }
 
     private boolean upload(String path, InputStream in, String fileName) throws Exception {

@@ -137,7 +137,6 @@ public class UploadInfoController {
                             HttpServletResponse resp) throws Exception {
         Account current = ServerConstant.LOCAL_ACCOUNT.get();
         UploadInfoVo uploadInfoVo = uploadInfoService.getUploadInfoVo(param, current.getId());
-        log.info(JSON.toJSONString(uploadInfoVo));
         final String uploadFileName = (uploadInfoVo == null) ? param.trim() : uploadInfoVo.getFileName();
         final String fileName = (uploadInfoVo == null) ? param.trim() : uploadInfoVo.getFileInfo().getFileName();
         //get方式提交的

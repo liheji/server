@@ -69,7 +69,7 @@ logging:
   level:
     root: info
     top.liheji.server: info
-  config: classpath:log4j2.xml
+  config: classpath:logback-spring.xml
 
 permission:
   create: false
