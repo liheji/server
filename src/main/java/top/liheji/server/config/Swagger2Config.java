@@ -3,6 +3,8 @@ package top.liheji.server.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -24,7 +26,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Configuration
 @EnableSwagger2
-public class Swagger2Config {
+public class Swagger2Config implements WebMvcConfigurer {
     @Value("${debug: false}")
     private Boolean debug;
 
@@ -46,9 +48,21 @@ public class Swagger2Config {
                 .title("憶夣的API")
                 .description(
                         "本项目项目使用springboot + MyBatis-Plus实现，项目目的主要作为练手<br>" +
-                                "前端使用vue2 + element-ui实现（前后端完全分离）在另一个项目"
+                                "前端使用vue2 + element-ui实现（前后端完全分离）在另一个项目<br>" +
+                                "访问地址： http://[IP]:[PORT]/doc.html"
                 )
                 .contact(new Contact("憶夣", "https://blog.yilee.top", "930617673@qq.com"))
                 .build();
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**").addResourceLocations(
+                "classpath:/static/");
+        registry.addResourceHandler("doc.html").addResourceLocations(
+                "classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**").addResourceLocations(
+                "classpath:/META-INF/resources/webjars/");
+        WebMvcConfigurer.super.addResourceHandlers(registry);
     }
 }

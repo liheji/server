@@ -25,10 +25,10 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import top.dcenter.ums.security.core.oauth.config.Auth2AutoConfigurer;
 import top.dcenter.ums.security.core.oauth.properties.Auth2Properties;
 import top.liheji.server.config.auth.constant.AuthConstant;
+import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.remember.RedisTokenBasedRememberMeServices;
 import top.liheji.server.config.filter.SetComDataFilter;
 import top.liheji.server.config.filter.AuthFilter;
-import top.liheji.server.config.auth.filter.MultipleLoginAuthenticationFilter;
 import top.liheji.server.config.auth.provider.CaptchaAuthenticationProvider;
 import top.liheji.server.config.filter.CaptchaFilter;
 import top.liheji.server.constant.ServerConstant;
@@ -115,8 +115,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll();
 
         //登录设置
-        http.formLogin()
-                .loginPage("/login");
+        http.formLogin().disable(); // 禁用 UsernamePasswordAuthenticationFilter
+        http.oauth2Login().disable();  // // 禁用 OAuth2LoginAuthenticationFilter
 
         // 第三方登录
         http.apply(this.auth2AutoConfigurer);
@@ -140,13 +140,17 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // 跨域攻击拦截
         http.csrf()
-//                .disable();
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringAntMatchers("/before/cdn");
 
+        if (debug) {
+            http.csrf().disable();
+        }
+
         http.rememberMe()
                 .key(AuthConstant.REMEMBER_ME_KEY)
-                .rememberMeServices(rememberMeServices());
+                .rememberMeServices(rememberMeServices())
+                .authenticationSuccessHandler(formLoginSuccessHandler());
 
         // 未登录以及登录认证设置
         http.exceptionHandling()
