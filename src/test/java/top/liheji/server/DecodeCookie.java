@@ -1,4 +1,4 @@
-package top.liheji.server;
+package top.yilee.server;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -48,7 +48,7 @@ public class DecodeCookie {
     private static final String TRUNCATION_SUFFIX = " (truncated)...";
 
     public static String[] delimitedListToStringArray(String str, String delimiter) {
-        return delimitedListToStringArray(str, delimiter, (String) null);
+        return delimitedListToStringArray(str, delimiter, null);
     }
 
     public static String[] delimitedListToStringArray(String str, String delimiter, String charsToDelete) {
@@ -57,7 +57,7 @@ public class DecodeCookie {
         } else if (delimiter == null) {
             return new String[]{str};
         } else {
-            List<String> result = new ArrayList();
+            List<String> result = new ArrayList<>();
             int pos;
             if (delimiter.isEmpty()) {
                 for (pos = 0; pos < str.length(); ++pos) {
@@ -69,12 +69,12 @@ public class DecodeCookie {
                     result.add(deleteAny(str.substring(pos, delPos), charsToDelete));
                 }
 
-                if (str.length() > 0 && pos <= str.length()) {
+                if (!str.isEmpty() && pos <= str.length()) {
                     result.add(deleteAny(str.substring(pos), charsToDelete));
                 }
             }
 
-            return toStringArray((Collection) result);
+            return toStringArray(result);
         }
     }
 
@@ -106,11 +106,11 @@ public class DecodeCookie {
     }
 
     public static String[] toStringArray(Collection<String> collection) {
-        return !isEmpty(collection) ? (String[]) collection.toArray(EMPTY_STRING_ARRAY) : EMPTY_STRING_ARRAY;
+        return !isEmpty(collection) ? collection.toArray(EMPTY_STRING_ARRAY) : EMPTY_STRING_ARRAY;
     }
 
     public static String[] toStringArray(Enumeration<String> enumeration) {
-        return enumeration != null ? toStringArray((Collection) Collections.list(enumeration)) : EMPTY_STRING_ARRAY;
+        return enumeration != null ? toStringArray(Collections.list(enumeration)) : EMPTY_STRING_ARRAY;
     }
 
     public static boolean isEmpty(Collection<?> collection) {

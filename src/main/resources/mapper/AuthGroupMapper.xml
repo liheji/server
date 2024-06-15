@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="top.liheji.server.mapper.AuthGroupMapper">
+<mapper namespace="top.yilee.server.mapper.AuthGroupMapper">
 
-    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthGroup">
+    <resultMap id="BaseResultMap" type="top.yilee.server.pojo.AuthGroup">
         <id property="id" column="id"/>
         <result property="codename" column="codename"/>
         <result property="name" column="name"/>

@@ -55,7 +55,7 @@ spring:
       add-mappings: false
 
 mybatis-plus:
-  type-aliases-package: top.liheji.pojo
+  type-aliases-package: top.yilee.pojo
   mapper-locations: classpath:mapper/*Mapper.xml
   global-config:
     db-config:
@@ -68,7 +68,7 @@ mybatis-plus:
 logging:
   level:
     root: info
-    top.liheji.server: info
+    top.yilee.server: info
   config: classpath:logback-spring.xml
 
 permission:

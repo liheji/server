@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="top.liheji.server.mapper.AuthDevicesMapper">
+<mapper namespace="top.yilee.server.mapper.AuthDevicesMapper">
 
-    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.AuthDevices">
+    <resultMap id="BaseResultMap" type="top.yilee.server.pojo.AuthDevices">
         <id property="type" column="type"/>
         <result property="username" column="username"/>
         <result property="series" column="series"/>

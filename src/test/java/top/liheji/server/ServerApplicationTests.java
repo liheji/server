@@ -1,4 +1,4 @@
-package top.liheji.server;
+package top.yilee.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

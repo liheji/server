@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="top.liheji.server.mapper.UploadInfoMapper">
+<mapper namespace="top.yilee.server.mapper.UploadInfoMapper">
 
-    <resultMap id="BaseResultMap" type="top.liheji.server.pojo.UploadInfo">
+    <resultMap id="BaseResultMap" type="top.yilee.server.pojo.UploadInfo">
         <id property="id" column="id"/>
         <result property="fileName" column="file_name"/>
         <result property="createTime" column="create_time"/>
