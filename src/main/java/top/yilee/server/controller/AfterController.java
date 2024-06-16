@@ -1,7 +1,6 @@
 package top.yilee.server.controller;
 
 import cn.hutool.core.codec.Base64;
-import com.aspose.slides.exceptions.NotSupportedException;
 import lombok.Cleanup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -91,7 +90,7 @@ public class AfterController {
 
         File genFile = HrbeuUtils.dealWakeupSchedule(in, file.getOriginalFilename());
         if (genFile == null) {
-            throw new NotSupportedException("仅支持xls,xlsx,html格式");
+            throw new Exception("仅支持html格式");
         }
 
         threadPoolExecutor.schedule(new DeleteWakeUpFileTask(genFile), 10, TimeUnit.MINUTES);

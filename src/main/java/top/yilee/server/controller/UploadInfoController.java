@@ -161,11 +161,6 @@ public class UploadInfoController {
         //获取输出流
         //通知客户端以下载的方式打开
         @Cleanup OutputStream out = resp.getOutputStream();
-        if (mediaType.isOffice()) {
-            resp.setHeader("Content-Type", "application/pdf;charset=utf-8");
-            AsposeUtils.transToPdf(file.getAbsolutePath(), out);
-        } else {
-            FileUtils.writePos(file, out, 0, file.length());
-        }
+        FileUtils.writePos(file, out, 0, file.length());
     }
 }

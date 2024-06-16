@@ -126,26 +126,17 @@
             <artifactId>hutool-http</artifactId>
             <version>5.8.25</version>
         </dependency>
+        <!-- justAuth -->
         <dependency>
             <groupId>top.dcenter</groupId>
             <artifactId>justAuth-spring-security-starter</artifactId>
             <version>1.1.25</version>
         </dependency>
-        <!-- 本地 Office文件操作(word,excel,ppt) -->
+        <!-- 写入CSV -->
         <dependency>
-            <groupId>com.aspose</groupId>
-            <artifactId>aspose-words</artifactId>
-            <version>22.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.aspose</groupId>
-            <artifactId>aspose-cells</artifactId>
-            <version>22.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.aspose</groupId>
-            <artifactId>aspose-slides</artifactId>
-            <version>22.1</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.11.0</version>
         </dependency>
         <!-- 本地 easy-captcha -->
         <dependency>

@@ -1063,21 +1063,13 @@ public class MediaType {
         return mediaType.startsWith("x-conference");
     }
 
-    public boolean isOffice() {
-        return Pattern.matches("\\.(doc|xls|ppt)x?$", suffix);
-    }
-
     public boolean isView() {
         boolean isView = this.isText() || this.isImage() || this.isVideo() || this.isAudio();
         if (isView) {
             return true;
         }
 
-        if (Pattern.matches("application/.*(script|json|pdf|xml)", mediaType)) {
-            return true;
-        }
-
-        return this.isOffice();
+        return Pattern.matches("application/.*(script|json|pdf|xml)", mediaType);
     }
 
     public static String guessMediaType(String fileName) {
