@@ -93,12 +93,6 @@
             <artifactId>UserAgentUtils</artifactId>
             <version>1.21</version>
         </dependency>
-        <!-- guava工具包 -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>32.1.0-jre</version>
-        </dependency>
         <!--html,xml网页解析-->
         <dependency>
             <groupId>org.jsoup</groupId>
