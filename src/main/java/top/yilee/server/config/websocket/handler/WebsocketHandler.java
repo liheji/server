@@ -15,8 +15,10 @@ import top.yilee.server.util.FileUtils;
 import top.yilee.server.util.JsonUtils;
 import top.yilee.server.util.R;
 import top.yilee.server.util.SshUtils;
+import top.yilee.server.vo.FileItemVo;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -114,7 +116,8 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
                 try {
                     SshUtils ssh = sessionVo.getSsh();
                     SshServerVo serverVo = JsonUtils.parseObject(payload, SshServerVo.class);
-                    r.put("data", ssh.genInfoList(serverVo.getPath()));
+                    List<FileItemVo> fileItemVos = ssh.genInfoList(serverVo.getPath());
+                    r.put("path", serverVo.getPath()).put("data", fileItemVos);
                 } catch (Exception err) {
                     err.printStackTrace();
                     r = R.error(err.getMessage()).put("action", action.getCode());
@@ -129,7 +132,7 @@ public class WebsocketHandler extends AbstractWebSocketHandler {
                         r = R.error("文件不支持预览").put("action", action.getCode());
                         break;
                     }
-                    r.put("data", str);
+                    r.put("path", serverVo.getPath()).put("data", str);
                 } catch (Exception err) {
                     err.printStackTrace();
                     r = R.error(err.getMessage()).put("action", action.getCode());

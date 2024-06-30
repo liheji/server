@@ -2,7 +2,6 @@ package top.yilee.server.util;
 
 import com.jcraft.jsch.*;
 import lombok.Cleanup;
-import top.yilee.server.constant.MediaType;
 import top.yilee.server.vo.FileItemVo;
 
 import java.io.*;
@@ -169,8 +168,8 @@ public class SshUtils {
      * @throws Exception
      */
     public String view(String path) throws Exception {
-        MediaType mediaType = MediaType.guessMediaTypeClass(path);
-        if (!mediaType.isText()) {
+        String resStr = execute(String.format("/usr/bin/file %s", path));
+        if (resStr == null || !resStr.contains(" text")) {
             return null;
         }
         String res = execute(String.format("cat %s", path));
