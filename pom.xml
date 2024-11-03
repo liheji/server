@@ -13,7 +13,7 @@
     <version>1.3.0</version>
     <packaging>jar</packaging>
     <name>server</name>
-    <description>Demo project for Spring Boot</description>
+    <description>Server Project</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

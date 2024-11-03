@@ -1,6 +1,7 @@
 package top.yilee.server.vo;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -12,6 +13,7 @@ import java.io.Serializable;
  * @description : 课程表实体
  */
 @Data
+@NoArgsConstructor
 public class CourseVo implements Serializable {
     private static final long serialVersionUID = 1587842998002988039L;
 
@@ -47,7 +49,7 @@ public class CourseVo implements Serializable {
 
     public CourseVo(String name, Integer day, String room,
                     String teacher, Integer startNode, Integer endNode,
-                    Integer startWeek, Integer endWeek, String note) {
+                    Integer startWeek, Integer endWeek, int type, float credit, String note) {
         this.name = name;
         this.day = day;
         this.room = room;
@@ -56,6 +58,8 @@ public class CourseVo implements Serializable {
         this.endNode = endNode;
         this.startWeek = startWeek;
         this.endWeek = endWeek;
+        this.type = type;
+        this.credit = credit;
         this.note = note;
     }
 }
